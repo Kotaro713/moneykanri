@@ -1,0 +1,383 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  background: #f5f5f7;
+  color: #222;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app {
+  max-width: 500px;
+  margin: auto;
+  padding: 20px;
+}
+
+header {
+  margin-bottom: 20px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+header p {
+  margin: 5px 0;
+  color: #777;
+}
+
+section {
+  margin-bottom: 25px;
+}
+
+h2 {
+  font-size: 18px;
+  margin: 0 0 12px;
+}
+
+
+/* =====================
+   今月の収支
+===================== */
+
+.summary {
+  background: white;
+  padding: 20px;
+  border-radius: 18px;
+  text-align: center;
+}
+
+#monthlyBalance {
+  font-size: 32px;
+  font-weight: bold;
+  margin: 10px 0 20px;
+}
+
+.income-expense {
+  display: flex;
+  justify-content: space-around;
+}
+
+.income-expense div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.income-expense span {
+  color: #777;
+  font-size: 13px;
+}
+
+
+/* =====================
+   残高
+===================== */
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.section-title h2 {
+  margin: 0;
+}
+
+#toggleBalance {
+  border: none;
+  background: transparent;
+  color: #666;
+  padding: 5px;
+}
+
+.balance-card {
+  background: white;
+  padding: 18px;
+  margin-bottom: 10px;
+  border-radius: 15px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.balance-card strong {
+  font-size: 18px;
+}
+
+
+/* =====================
+   追加ボタン
+===================== */
+
+#addButton {
+  width: 100%;
+  border: none;
+  border-radius: 15px;
+  padding: 17px;
+  font-size: 17px;
+  font-weight: bold;
+  background: #222;
+  color: white;
+  margin-bottom: 25px;
+}
+
+
+/* =====================
+   取引一覧
+===================== */
+
+#transactionList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.transaction {
+  background: white;
+  padding: 15px;
+  border-radius: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.transaction-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.transaction-date {
+  color: #888;
+  font-size: 12px;
+}
+
+.income {
+  color: #16803c;
+}
+
+.expense {
+  color: #d33;
+}
+
+
+/* =====================
+   モーダル
+===================== */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 500px;
+
+  background: #f5f5f7;
+
+  border-radius: 25px 25px 0 0;
+
+  padding: 22px;
+
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+#closeModal {
+  border: none;
+  background: #e5e5e5;
+
+  width: 36px;
+  height: 36px;
+
+  border-radius: 50%;
+
+  font-size: 24px;
+}
+
+
+/* =====================
+   入力
+===================== */
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+
+  font-size: 14px;
+  font-weight: bold;
+
+  margin-bottom: 8px;
+}
+
+.form-group input {
+  width: 100%;
+
+  padding: 15px;
+
+  border: 1px solid #ddd;
+
+  border-radius: 12px;
+
+  background: white;
+
+  outline: none;
+}
+
+.form-group input:focus {
+  border-color: #777;
+}
+
+
+/* =====================
+   選択ボタン
+===================== */
+
+.choice-group {
+  display: grid;
+
+  grid-template-columns: repeat(2, 1fr);
+
+  gap: 10px;
+}
+
+.choice-button {
+  border: 2px solid #ddd;
+
+  background: white;
+
+  padding: 14px 10px;
+
+  border-radius: 12px;
+
+  font-weight: bold;
+
+  transition: 0.15s;
+}
+
+.choice-button.selected {
+  background: #222;
+  color: white;
+
+  border-color: #222;
+}
+
+
+/* =====================
+   資金移動
+===================== */
+
+.transfer-arrow {
+  text-align: center;
+
+  font-size: 24px;
+
+  margin: -5px 0 10px;
+}
+
+
+/* =====================
+   保存
+===================== */
+
+.save-button {
+  width: 100%;
+
+  border: none;
+
+  border-radius: 15px;
+
+  padding: 17px;
+
+  background: #222;
+
+  color: white;
+
+  font-size: 17px;
+
+  font-weight: bold;
+
+  margin-top: 5px;
+}
+
+
+/* =====================
+   スマホ
+===================== */
+
+@media (max-width: 500px) {
+
+  .app {
+    padding: 16px;
+  }
+
+  .modal-content {
+    padding: 20px 16px;
+  }
+
+}
+/* =====================
+   バックアップセクション
+===================== */
+
+.backup-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.sub-button {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 14px;
+  padding: 14px 10px;
+  background: white;
+  color: #333;
+  font-weight: bold;
+  font-size: 14px;
+  transition: 0.15s;
+}
+
+.sub-button:active {
+  background: #eee;
+}

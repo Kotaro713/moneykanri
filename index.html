@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Kotaro Money</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="app">
+
+    <header>
+      <h1>Kotaro Money</h1>
+      <p>自分専用のお金管理</p>
+    </header>
+
+
+    <!-- 今月の収支 -->
+
+    <section class="summary">
+
+      <h2>今月の収支</h2>
+
+      <div id="monthlyBalance">
+        ¥0
+      </div>
+
+      <div class="income-expense">
+
+        <div>
+          <span>収入</span>
+          <strong id="monthlyIncome">
+            ¥0
+          </strong>
+        </div>
+
+        <div>
+          <span>支出</span>
+          <strong id="monthlyExpense">
+            ¥0
+          </strong>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- 残高 -->
+
+    <section>
+
+      <div class="section-title">
+
+        <h2>残高</h2>
+
+        <button id="toggleBalance">
+          👁 表示
+        </button>
+
+      </div>
+
+
+      <div class="balance-card">
+
+        <span>現金</span>
+
+        <strong id="cashBalance">
+          ¥0
+        </strong>
+
+      </div>
+
+
+      <div class="balance-card">
+
+        <span>Olive</span>
+
+        <strong id="oliveBalance">
+          ¥0
+        </strong>
+
+      </div>
+
+
+      <div class="balance-card">
+
+        <span>PayPay</span>
+
+        <strong id="paypayBalance">
+          ¥0
+        </strong>
+
+      </div>
+
+
+      <div class="balance-card">
+
+        <span>Suica</span>
+
+        <strong id="suicaBalance">
+          ¥0
+        </strong>
+
+      </div>
+
+    </section>
+
+
+    <!-- 追加ボタン -->
+
+    <button id="addButton">
+      ＋ 収支を追加
+    </button>
+
+
+    <!-- 最近の取引 -->
+
+    <section>
+
+      <h2>最近の取引</h2>
+
+      <div id="transactionList"></div>
+
+    </section>
+
+  </div>
+
+
+  <!-- 取引入力画面 -->
+
+  <div id="modal" class="modal hidden">
+
+    <div class="modal-content">
+		<h2 id="modalTitle">取引を追加</h2>
+
+      <div class="modal-header">
+
+        <h2>取引を追加</h2>
+
+        <button id="closeModal">
+          ×
+        </button>
+
+      </div>
+
+
+      <!-- 種類 -->
+
+      <div class="form-group">
+
+        <label>種類</label>
+
+        <div class="choice-group">
+
+          <button
+            class="choice-button type-button"
+            data-type="income">
+            収入
+          </button>
+
+          <button
+            class="choice-button type-button"
+            data-type="expense">
+            支出
+          </button>
+
+          <button
+            class="choice-button type-button"
+            data-type="transfer">
+            資金移動
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- タイトル -->
+
+      <div class="form-group">
+
+        <label for="titleInput">
+          タイトル
+        </label>
+
+        <input
+          id="titleInput"
+          type="text"
+          placeholder="例：昼ごはん">
+
+      </div>
+
+
+      <!-- 金額 -->
+
+      <div class="form-group">
+
+        <label for="amountInput">
+          金額
+        </label>
+
+        <input
+          id="amountInput"
+          type="number"
+          inputmode="numeric"
+          placeholder="例：800">
+
+      </div>
+
+
+      <!-- 通常の口座 -->
+
+      <div
+        id="accountArea"
+        class="form-group">
+
+        <label>支払い・入金先</label>
+
+        <div class="choice-group">
+
+          <button
+            class="choice-button account-button"
+            data-account="cash">
+            現金
+          </button>
+
+          <button
+            class="choice-button account-button"
+            data-account="olive">
+            Olive
+          </button>
+
+          <button
+            class="choice-button account-button"
+            data-account="paypay">
+            PayPay
+          </button>
+
+          <button
+            class="choice-button account-button"
+            data-account="suica">
+            Suica
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- 資金移動 -->
+
+      <div
+        id="transferArea"
+        class="hidden">
+
+        <div class="form-group">
+
+          <label>移動元</label>
+
+          <div class="choice-group">
+
+            <button
+              class="choice-button from-button"
+              data-account="cash">
+              現金
+            </button>
+
+            <button
+              class="choice-button from-button"
+              data-account="olive">
+              Olive
+            </button>
+
+            <button
+              class="choice-button from-button"
+              data-account="paypay">
+              PayPay
+            </button>
+
+            <button
+              class="choice-button from-button"
+              data-account="suica">
+              Suica
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <div class="transfer-arrow">
+          ↓
+        </div>
+
+
+        <div class="form-group">
+
+          <label>移動先</label>
+
+          <div class="choice-group">
+
+            <button
+              class="choice-button to-button"
+              data-account="cash">
+              現金
+            </button>
+
+            <button
+              class="choice-button to-button"
+              data-account="olive">
+              Olive
+            </button>
+
+            <button
+              class="choice-button to-button"
+              data-account="paypay">
+              PayPay
+            </button>
+
+            <button
+              class="choice-button to-button"
+              data-account="suica">
+              Suica
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- 決定 -->
+
+      <button
+        id="saveTransaction"
+        class="save-button">
+
+        追加する
+
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <script src="script.js"></script>
+
+</body>
+
+</html>
+<!-- バックアップ・復元セクション -->
+  <section class="backup-section">
+    <h2>データ管理</h2>
+    <div class="backup-buttons">
+      <button id="exportButton" class="sub-button">📥 バックアップを保存</button>
+      <input type="file" id="importFile" accept=".json" style="display: none;">
+      <button id="importButton" class="sub-button">📤 データを復元</button>
+    </div>
+  </section>
