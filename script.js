@@ -2,11 +2,15 @@
 // 初期データ・状態管理
 // =====================
 let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+// クイックタイトルの初期値（保存されていなければデフォルトの4つ）
+let quickTitles = JSON.parse(localStorage.getItem('quickTitles')) || ['昼食', 'おやつ', '夕食', 'カラオケ'];
+
 let currentType = 'expense'; // デフォルトは支出
 let selectedAccount = 'cash';
 let fromAccount = 'cash';
 let toAccount = 'olive';
-let editingId = null; // 編集中のID（nullなら新規追加）
+let editingId = null; 
 let hideBalance = false;
 
 // DOM要素の取得
@@ -18,6 +22,7 @@ const monthlyIncomeEl = document.getElementById('monthlyIncome');
 const monthlyExpenseEl = document.getElementById('monthlyExpense');
 const monthlyBalanceEl = document.getElementById('monthlyBalance');
 const transactionListEl = document.getElementById('transactionList');
+
 const modal = document.getElementById('modal');
 const modalTitle = document.getElementById('modalTitle');
 const addButton = document.getElementById('addButton');
@@ -29,6 +34,15 @@ const titleInput = document.getElementById('titleInput');
 const amountInput = document.getElementById('amountInput');
 const accountArea = document.getElementById('accountArea');
 const transferArea = document.getElementById('transferArea');
+const quickTitlesContainer = document.getElementById('quickTitlesContainer');
+
+// 設定モーダル用DOM
+const settingsModal = document.getElementById('settingsModal');
+const openSettingsButton = document.getElementById('openSettings');
+const closeSettingsModalButton = document.getElementById('closeSettingsModal');
+const newQuickTitleInput = document.getElementById('newQuickTitleInput');
+const addQuickTitleButton = document.getElementById('addQuickTitleButton');
+const settingsQuickList = document.getElementById('settingsQuickList');
 
 // =====================
 // イベントリスナーの設定
@@ -37,6 +51,11 @@ addButton.addEventListener('click', () => openModal());
 closeModalButton.addEventListener('click', closeModal);
 saveTransactionButton.addEventListener('click', saveTransaction);
 toggleBalanceButton.addEventListener('click', toggleBalanceVisibility);
+
+// 設定モーダル関連
+openSettingsButton.addEventListener('click', openSettings);
+closeSettingsModalButton.addEventListener('click', closeSettings);
+addQuickTitleButton.addEventListener('click', addQuickTitle);
 
 // 種類ボタン（収入・支出・口座移動）
 document.querySelectorAll('.type-button').forEach(button => {
@@ -82,13 +101,6 @@ document.querySelectorAll('.to-button').forEach(button => {
   });
 });
 
-// クイックタイトル選択ボタン
-document.querySelectorAll('.quick-title-btn').forEach(button => {
-  button.addEventListener('click', (e) => {
-    titleInput.value = e.target.textContent;
-  });
-});
-
 // バックアップ＆インポート
 document.getElementById('exportButton').addEventListener('click', exportData);
 document.getElementById('importButton').addEventListener('click', () => document.getElementById('importFile').click());
@@ -98,11 +110,28 @@ document.getElementById('importFile').addEventListener('change', importData);
 // 関数定義
 // =====================
 
+// クイック選択ボタンを描画する関数
+function renderQuickTitles() {
+  quickTitlesContainer.innerHTML = '';
+  quickTitles.forEach(title => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'quick-title-btn choice-button';
+    btn.style.fontSize = '12px';
+    btn.style.padding = '6px 10px';
+    btn.textContent = title;
+    btn.addEventListener('click', () => {
+      titleInput.value = title;
+    });
+    quickTitlesContainer.appendChild(btn);
+  });
+}
+
 function openModal(transaction = null) {
+  renderQuickTitles();
   modal.classList.remove('hidden');
   
   if (transaction) {
-    // 編集モード
     editingId = transaction.id;
     modalTitle.textContent = '取引を編集';
     saveTransactionButton.textContent = '更新する';
@@ -126,7 +155,6 @@ function openModal(transaction = null) {
       transferArea.classList.add('hidden');
     }
   } else {
-    // 新規追加モード
     editingId = null;
     modalTitle.textContent = '取引を追加';
     saveTransactionButton.textContent = '追加する';
@@ -146,6 +174,59 @@ function closeModal() {
   modal.classList.add('hidden');
 }
 
+// 設定モーダル開閉
+function openSettings() {
+  renderSettingsQuickList();
+  settingsModal.classList.remove('hidden');
+}
+
+function closeSettings() {
+  settingsModal.classList.add('hidden');
+}
+
+// 設定画面内のリストを描画（削除ボタン付き）
+function renderSettingsQuickList() {
+  settingsQuickList.innerHTML = '';
+  quickTitles.forEach((title, index) => {
+    const tag = document.createElement('div');
+    tag.style.display = 'inline-flex';
+    tag.style.alignItems = 'center';
+    tag.style.gap = '6px';
+    tag.style.background = 'rgba(128, 128, 128, 0.1)';
+    tag.style.padding = '6px 12px';
+    tag.style.borderRadius = '8px';
+    tag.style.fontSize = '13px';
+    tag.style.fontWeight = '600';
+
+    tag.innerHTML = `
+      <span>${title}</span>
+      <button type="button" style="background: none; border: none; color: #ff3b30; cursor: pointer; font-weight: bold; font-size: 14px;">×</button>
+    `;
+
+    tag.querySelector('button').addEventListener('click', () => {
+      quickTitles.splice(index, 1);
+      localStorage.setItem('quickTitles', JSON.stringify(quickTitles));
+      renderSettingsQuickList();
+    });
+
+    settingsQuickList.appendChild(tag);
+  });
+}
+
+// 新しいクイックタイトルを追加
+function addQuickTitle() {
+  const newTitle = newQuickTitleInput.value.trim();
+  if (!newTitle) return;
+  if (quickTitles.includes(newTitle)) {
+    alert('すでに存在します');
+    return;
+  }
+  quickTitles.push(newTitle);
+  localStorage.setItem('quickTitles', JSON.stringify(quickTitles));
+  newQuickTitleInput.value = '';
+  renderSettingsQuickList();
+}
+
 function updateSelectedButton(selector, datasetKey, value) {
   document.querySelectorAll(selector).forEach(btn => {
     if (btn.dataset[datasetKey] === value) {
@@ -163,7 +244,6 @@ function saveTransaction() {
     return;
   }
 
-  // タイトルが空の場合はデフォルト名を設定
   let title = titleInput.value.trim();
   if (!title) {
     if (currentType === 'income') title = '収入';
@@ -188,7 +268,7 @@ function saveTransaction() {
       transactions[index] = transactionData;
     }
   } else {
-    transactions.unshift(transactionData); // 先頭に追加
+    transactions.unshift(transactionData);
   }
 
   saveAndRefresh();
@@ -213,7 +293,7 @@ function toggleBalanceVisibility() {
   updateUI();
 }
 
-// 画面の更新（残高計算・収支・履歴の描画）
+// 画面の更新
 function updateUI() {
   let balances = { cash: 0, olive: 0, paypay: 0, suica: 0 };
   let monthlyIncome = 0;
@@ -226,7 +306,6 @@ function updateUI() {
   transactionListEl.innerHTML = '';
 
   transactions.forEach(t => {
-    // 残高計算
     if (t.type === 'income') {
       balances[t.account] += t.amount;
     } else if (t.type === 'expense') {
@@ -236,14 +315,12 @@ function updateUI() {
       balances[t.to] += t.amount;
     }
 
-    // 今月の収支計算
     const tDate = new Date(t.date);
     if (tDate.getFullYear() === currentYear && tDate.getMonth() === currentMonth) {
       if (t.type === 'income') monthlyIncome += t.amount;
       if (t.type === 'expense') monthlyExpense += t.amount;
     }
 
-    // 履歴カードの生成
     const itemEl = document.createElement('div');
     itemEl.className = 'transaction';
     
@@ -275,7 +352,6 @@ function updateUI() {
     transactionListEl.appendChild(itemEl);
   });
 
-  // 残高表示の更新（目隠し対応）
   cashBalanceEl.textContent = hideBalance ? '••••' : `¥${balances.cash.toLocaleString()}`;
   oliveBalanceEl.textContent = hideBalance ? '••••' : `¥${balances.olive.toLocaleString()}`;
   paypayBalanceEl.textContent = hideBalance ? '••••' : `¥${balances.paypay.toLocaleString()}`;
@@ -286,13 +362,11 @@ function updateUI() {
   monthlyBalanceEl.textContent = `¥${(monthlyIncome - monthlyExpense).toLocaleString()}`;
 }
 
-// 編集ボタン用（グローバルスコープに配置）
 window.editTransaction = function(id) {
   const transaction = transactions.find(t => t.id === id);
   if (transaction) openModal(transaction);
 };
 
-// バックアップ書き出し
 function exportData() {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transactions, null, 2));
   const downloadAnchor = document.createElement('a');
@@ -303,7 +377,6 @@ function exportData() {
   downloadAnchor.remove();
 }
 
-// データインポート
 function importData(event) {
   const fileReader = new FileReader();
   if (event.target.files[0]) {
@@ -325,5 +398,4 @@ function importData(event) {
   }
 }
 
-// 初期化実行
 updateUI();
