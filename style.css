@@ -1,6 +1,32 @@
 /* =====================
-   基本スタイル（スマホ最適化）
+   基本スタイル（スマホ最適化 & モノクロテーマ）
 ===================== */
+
+/* デフォルト（ライトモード時）の色設定 */
+:root {
+  --bg-color: #fafafa;
+  --card-bg: #ffffff;
+  --text-main: #111111;
+  --text-sub: #71717a;
+  --accent: #111111;
+  --border: #e4e4e7;
+  --btn-active-bg: #111111;
+  --btn-active-text: #ffffff;
+}
+
+/* iPhoneが「ダークモード（ナイトモード）」のときの色設定 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #0f0f10;
+    --card-bg: #1c1c1e;
+    --text-main: #f2f2f7;
+    --text-sub: #8e8e93;
+    --accent: #ffffff;
+    --border: #38383a;
+    --btn-active-bg: #ffffff;      /* ダーク時は白く光る選択ボタン */
+    --btn-active-text: #0f0f10;    /* 選択時の文字は黒 */
+  }
+}
 
 * {
   box-sizing: border-box;
@@ -11,8 +37,8 @@
 }
 
 body {
-  background-color: #f5f6fa;
-  color: #333;
+  background-color: var(--bg-color);
+  color: var(--text-main);
   padding: 16px;
   padding-bottom: 50px;
 }
@@ -33,21 +59,22 @@ header {
 header h1 {
   font-size: 22px;
   font-weight: 700;
-  color: #111;
+  color: var(--text-main);
 }
 
 /* カード共通 */
 section {
-  background: #ffffff;
+  background: var(--card-bg);
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--border);
 }
 
 section h2 {
   font-size: 15px;
-  color: #666;
+  color: var(--text-sub);
   margin-bottom: 12px;
 }
 
@@ -59,22 +86,23 @@ section h2 {
 }
 
 .balance-item {
-  background: #f8f9fc;
+  background: rgba(128, 128, 128, 0.06);
   padding: 12px;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
+  border: 1px solid var(--border);
 }
 
 .balance-item span {
   font-size: 12px;
-  color: #777;
+  color: var(--text-sub);
   margin-bottom: 4px;
 }
 
 .balance-item strong {
   font-size: 18px;
-  color: #111;
+  color: var(--text-main);
 }
 
 /* 今月の収支 */
@@ -86,43 +114,44 @@ section h2 {
 }
 
 .income {
-  color: #2ecc71;
+  color: var(--text-main);
+  font-weight: bold;
 }
 
 .expense {
-  color: #e74c3c;
+  color: var(--text-sub);
 }
 
 /* メインボタン */
 .primary-button {
   width: 100%;
-  background: #007aff;
-  color: white;
-  border: none;
+  background: var(--btn-active-bg);
+  color: var(--btn-active-text);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 16px;
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
   margin-bottom: 16px;
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: 0.1s;
 }
 
 .primary-button:active {
   transform: scale(0.98);
-  background: #005bb5;
+  opacity: 0.8;
 }
 
-/* サブボタン（目隠し・バックアップ用） */
+/* サブボタン */
 .sub-button-small {
-  background: #eef2f7;
-  border: none;
+  background: rgba(128, 128, 128, 0.08);
+  border: 1px solid var(--border);
   padding: 8px 12px;
   border-radius: 10px;
   font-size: 13px;
   font-weight: bold;
-  color: #333;
+  color: var(--text-main);
 }
 
 .backup-buttons {
@@ -133,17 +162,17 @@ section h2 {
 
 .sub-button {
   width: 100%;
-  border: 1px solid #e1e4ed;
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px 10px;
-  background: #f8f9fc;
-  color: #333;
+  background: rgba(128, 128, 128, 0.08);
+  color: var(--text-main);
   font-weight: 600;
   font-size: 13px;
 }
 
 .sub-button:active {
-  background: #eee;
+  background: rgba(128, 128, 128, 0.2);
 }
 
 /* 取引履歴リスト */
@@ -158,8 +187,9 @@ section h2 {
   justify-content: space-between;
   align-items: center;
   padding: 12px;
-  background: #f8f9fc;
+  background: rgba(128, 128, 128, 0.04);
   border-radius: 12px;
+  border: 1px solid var(--border);
 }
 
 .transaction-info {
@@ -170,12 +200,12 @@ section h2 {
 
 .transaction-info strong {
   font-size: 14px;
-  color: #333;
+  color: var(--text-main);
 }
 
 .transaction-date {
   font-size: 11px;
-  color: #888;
+  color: var(--text-sub);
 }
 
 /* 履歴内のボタン調整 */
@@ -183,14 +213,14 @@ section h2 {
   background: none;
   border: none;
   font-size: 12px;
-  color: #007aff;
+  color: var(--text-main);
   cursor: pointer;
   padding: 4px 6px;
   margin-left: 4px;
 }
 
 .transaction button:last-child {
-  color: #e74c3c;
+  color: var(--text-sub);
 }
 
 /* =====================
@@ -203,10 +233,10 @@ section h2 {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
-  align-items: flex-end; /* スマホで下のほうから出るようにする */
+  align-items: flex-end;
   z-index: 1000;
   transition: 0.3s;
 }
@@ -216,21 +246,22 @@ section h2 {
 }
 
 .modal-content {
-  background: #ffffff;
+  background: var(--card-bg);
   width: 100%;
   max-width: 480px;
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
   padding: 24px 20px 40px 20px;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
   max-height: 90vh;
   overflow-y: auto;
+  border: 1px solid var(--border);
 }
 
 .modal-content h2 {
   font-size: 18px;
   margin-bottom: 16px;
-  color: #111;
+  color: var(--text-main);
   text-align: center;
 }
 
@@ -241,7 +272,7 @@ section h2 {
 
 .form-group label {
   font-size: 12px;
-  color: #666;
+  color: var(--text-sub);
   margin-bottom: 6px;
   display: block;
   font-weight: bold;
@@ -250,16 +281,17 @@ section h2 {
 .form-group input {
   width: 100%;
   padding: 14px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  font-size: 16px; /* スマホで拡大されない16px */
-  background: #f8f9fc;
+  font-size: 16px;
+  background: rgba(128, 128, 128, 0.05);
+  color: var(--text-main);
   outline: none;
 }
 
 .form-group input:focus {
-  border-color: #007aff;
-  background: #fff;
+  border-color: var(--text-main);
+  background: var(--card-bg);
 }
 
 /* 選択ボタン群 */
@@ -276,21 +308,21 @@ section h2 {
 
 .choice-button {
   padding: 12px 8px;
-  border: 1px solid #ddd;
-  background: #f8f9fc;
+  border: 1px solid var(--border);
+  background: rgba(128, 128, 128, 0.05);
   border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
-  color: #444;
+  color: var(--text-main);
   cursor: pointer;
   text-align: center;
 }
 
-/* 選択されたときの見た目 */
+/* 選択されたときの見た目（ダーク・ライト連動） */
 .choice-button.selected {
-  background: #007aff;
-  color: white;
-  border-color: #007aff;
+  background: var(--btn-active-bg);
+  color: var(--btn-active-text);
+  border-color: var(--btn-active-bg);
 }
 
 /* モーダルのボタン */
@@ -302,13 +334,13 @@ section h2 {
 
 .cancel-button {
   flex: 1;
-  background: #eef2f7;
-  border: none;
+  background: rgba(128, 128, 128, 0.08);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px;
   font-size: 15px;
   font-weight: bold;
-  color: #555;
+  color: var(--text-main);
   cursor: pointer;
 }
 
