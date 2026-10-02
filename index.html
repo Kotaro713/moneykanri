@@ -42,10 +42,14 @@
       </div>
     </section>
 
-    <!-- 今月の収支 -->
+    <!-- 収支カード（月切り替え機能付き） -->
     <section class="summary-card">
-      <h2>今月の収支</h2>
-      <div class="summary-details">
+      <div class="month-selector">
+        <button id="prevMonthButton" class="month-nav-btn">◀</button>
+        <h2 id="currentMonthLabel" style="margin-bottom: 0;">2026年 10月 の収支</h2>
+        <button id="nextMonthButton" class="month-nav-btn">▶</button>
+      </div>
+      <div class="summary-details" style="margin-top: 12px;">
         <div>収入: <span id="monthlyIncome" class="income">¥0</span></div>
         <div>支出: <span id="monthlyExpense" class="expense">¥0</span></div>
         <div>収支: <span id="monthlyBalance">¥0</span></div>
@@ -67,7 +71,7 @@
 
     <!-- 取引履歴 -->
     <section class="history-section">
-      <h2>取引履歴</h2>
+      <h2 id="historyTitleLabel">取引履歴</h2>
       <div id="transactionList" class="transaction-list">
         <!-- JavaScriptで動的に生成 -->
       </div>
@@ -93,7 +97,6 @@
       <div class="form-group">
         <label>タイトル（省略可能）</label>
         <input type="text" id="titleInput" placeholder="例: 昼食、カラオケなど">
-        <!-- よく使うタイトルの選択肢（JavaScriptで動的に生成） -->
         <div id="quickTitlesContainer" class="quick-titles" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
           <!-- JSでボタンが挿入されます -->
         </div>

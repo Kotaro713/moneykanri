@@ -2,7 +2,6 @@
    基本スタイル（スマホ最適化 & モノクロテーマ）
 ===================== */
 
-/* デフォルト（ライトモード時）の色設定 */
 :root {
   --bg-color: #fafafa;
   --card-bg: #ffffff;
@@ -14,7 +13,6 @@
   --btn-active-text: #ffffff;
 }
 
-/* iPhoneが「ダークモード（ナイトモード）」のときの色設定 */
 @media (prefers-color-scheme: dark) {
   :root {
     --bg-color: #0f0f10;
@@ -103,6 +101,32 @@ section h2 {
 .balance-item strong {
   font-size: 18px;
   color: var(--text-main);
+}
+
+/* 月切り替え部分 */
+.month-selector {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.month-nav-btn {
+  background: rgba(128, 128, 128, 0.1);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.month-nav-btn:active {
+  background: rgba(128, 128, 128, 0.25);
 }
 
 /* 今月の収支 */
@@ -318,7 +342,6 @@ section h2 {
   text-align: center;
 }
 
-/* 選択されたときの見た目（ダーク・ライト連動） */
 .choice-button.selected {
   background: var(--btn-active-bg);
   color: var(--btn-active-text);

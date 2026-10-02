@@ -11,15 +11,24 @@ let toAccount = 'olive';
 let editingId = null; 
 let hideBalance = false;
 
+// 表示中の年月（初期値は今の年・月）
+let displayDate = new Date();
+
 // DOM要素の取得
 const cashBalanceEl = document.getElementById('cashBalance');
 const oliveBalanceEl = document.getElementById('oliveBalance');
 const paypayBalanceEl = document.getElementById('paypayBalance');
 const suicaBalanceEl = document.getElementById('suicaBalance');
+
+const currentMonthLabel = document.getElementById('currentMonthLabel');
+const prevMonthButton = document.getElementById('prevMonthButton');
+const nextMonthButton = document.getElementById('nextMonthButton');
+
 const monthlyIncomeEl = document.getElementById('monthlyIncome');
 const monthlyExpenseEl = document.getElementById('monthlyExpense');
 const monthlyBalanceEl = document.getElementById('monthlyBalance');
 const transactionListEl = document.getElementById('transactionList');
+const historyTitleLabel = document.getElementById('historyTitleLabel');
 
 const modal = document.getElementById('modal');
 const modalTitle = document.getElementById('modalTitle');
@@ -50,12 +59,23 @@ closeModalButton.addEventListener('click', closeModal);
 saveTransactionButton.addEventListener('click', saveTransaction);
 toggleBalanceButton.addEventListener('click', toggleBalanceVisibility);
 
+// 月切り替えボタン
+prevMonthButton.addEventListener('click', () => {
+  displayDate.setMonth(displayDate.getMonth() - 1);
+  updateUI();
+});
+
+nextMonthButton.addEventListener('click', () => {
+  displayDate.setMonth(displayDate.getMonth() + 1);
+  updateUI();
+});
+
 // 設定モーダル関連
 openSettingsButton.addEventListener('click', openSettings);
 closeSettingsModalButton.addEventListener('click', closeSettings);
 addQuickTitleButton.addEventListener('click', addQuickTitle);
 
-// 背景（何もないところ）をタップしたらモーダルを閉じる
+// 背景タップでモーダルを閉じる
 modal.addEventListener('click', (e) => {
   if (e.target === modal) {
     closeModal();
@@ -68,7 +88,7 @@ settingsModal.addEventListener('click', (e) => {
   }
 });
 
-// 種類ボタン（収入・支出・口座移動）
+// 種類ボタン
 document.querySelectorAll('.type-button').forEach(button => {
   button.addEventListener('click', (e) => {
     document.querySelectorAll('.type-button').forEach(btn => btn.classList.remove('selected'));
@@ -301,16 +321,8 @@ function toggleBalanceVisibility() {
 }
 
 function updateUI() {
+  // 1. 全期間の口座残高を計算
   let balances = { cash: 0, olive: 0, paypay: 0, suica: 0 };
-  let monthlyIncome = 0;
-  let monthlyExpense = 0;
-  
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-
-  transactionListEl.innerHTML = '';
-
   transactions.forEach(t => {
     if (t.type === 'income') {
       balances[t.account] += t.amount;
@@ -320,44 +332,61 @@ function updateUI() {
       balances[t.from] -= t.amount;
       balances[t.to] += t.amount;
     }
-
-    const tDate = new Date(t.date);
-    if (tDate.getFullYear() === currentYear && tDate.getMonth() === currentMonth) {
-      if (t.type === 'income') monthlyIncome += t.amount;
-      if (t.type === 'expense') monthlyExpense += t.amount;
-    }
-
-    const itemEl = document.createElement('div');
-    itemEl.className = 'transaction';
-    
-    let accountName = { cash: '現金', olive: 'Olive', paypay: 'PayPay', suica: 'Suica' };
-    let subText = '';
-    if (t.type === 'transfer') {
-      subText = `${accountName[t.from]} ➔ ${accountName[t.to]}`;
-    } else {
-      subText = accountName[t.account];
-    }
-
-    let amountFormatted = `¥${t.amount.toLocaleString()}`;
-    if (t.type === 'expense') amountFormatted = `-¥${t.amount.toLocaleString()}`;
-    if (t.type === 'income') amountFormatted = `+¥${t.amount.toLocaleString()}`;
-
-    itemEl.innerHTML = `
-      <div class="transaction-info">
-        <strong>${t.title}</strong>
-        <span class="transaction-date">${tDate.getMonth() + 1}/${tDate.getDate()} (${subText})</span>
-      </div>
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-weight: bold;">${amountFormatted}</span>
-        <div>
-          <button onclick="editTransaction(${t.id})">編集</button>
-          <button onclick="deleteTransaction(${t.id})">削除</button>
-        </div>
-      </div>
-    `;
-    transactionListEl.appendChild(itemEl);
   });
 
+  // 2. 表示中の年・月の集計
+  const targetYear = displayDate.getFullYear();
+  const targetMonth = displayDate.getMonth();
+
+  currentMonthLabel.textContent = `${targetYear}年 ${targetMonth + 1}月 の収支`;
+  historyTitleLabel.textContent = `${targetYear}年 ${targetMonth + 1}月の取引履歴`;
+
+  let monthlyIncome = 0;
+  let monthlyExpense = 0;
+  transactionListEl.innerHTML = '';
+
+  // 新しい順に並び替えつつ、選択された月のデータだけを画面に描画
+  transactions.forEach(t => {
+    const tDate = new Date(t.date);
+    const isTargetMonth = (tDate.getFullYear() === targetYear && tDate.getMonth() === targetMonth);
+
+    if (isTargetMonth) {
+      if (t.type === 'income') monthlyIncome += t.amount;
+      if (t.type === 'expense') monthlyExpense += t.amount;
+
+      const itemEl = document.createElement('div');
+      itemEl.className = 'transaction';
+      
+      let accountName = { cash: '現金', olive: 'Olive', paypay: 'PayPay', suica: 'Suica' };
+      let subText = '';
+      if (t.type === 'transfer') {
+        subText = `${accountName[t.from]} ➔ ${accountName[t.to]}`;
+      } else {
+        subText = accountName[t.account];
+      }
+
+      let amountFormatted = `¥${t.amount.toLocaleString()}`;
+      if (t.type === 'expense') amountFormatted = `-¥${t.amount.toLocaleString()}`;
+      if (t.type === 'income') amountFormatted = `+¥${t.amount.toLocaleString()}`;
+
+      itemEl.innerHTML = `
+        <div class="transaction-info">
+          <strong>${t.title}</strong>
+          <span class="transaction-date">${tDate.getMonth() + 1}/${tDate.getDate()} (${subText})</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-weight: bold;">${amountFormatted}</span>
+          <div>
+            <button onclick="editTransaction(${t.id})">編集</button>
+            <button onclick="deleteTransaction(${t.id})">削除</button>
+          </div>
+        </div>
+      `;
+      transactionListEl.appendChild(itemEl);
+    }
+  });
+
+  // 残高と今月の収支のテキストを反映
   cashBalanceEl.textContent = hideBalance ? '••••' : `¥${balances.cash.toLocaleString()}`;
   oliveBalanceEl.textContent = hideBalance ? '••••' : `¥${balances.olive.toLocaleString()}`;
   paypayBalanceEl.textContent = hideBalance ? '••••' : `¥${balances.paypay.toLocaleString()}`;
