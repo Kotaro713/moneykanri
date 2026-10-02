@@ -2,11 +2,9 @@
 // 初期データ・状態管理
 // =====================
 let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
-
-// クイックタイトルの初期値（保存されていなければデフォルトの4つ）
 let quickTitles = JSON.parse(localStorage.getItem('quickTitles')) || ['昼食', 'おやつ', '夕食', 'カラオケ'];
 
-let currentType = 'expense'; // デフォルトは支出
+let currentType = 'expense'; 
 let selectedAccount = 'cash';
 let fromAccount = 'cash';
 let toAccount = 'olive';
@@ -56,6 +54,19 @@ toggleBalanceButton.addEventListener('click', toggleBalanceVisibility);
 openSettingsButton.addEventListener('click', openSettings);
 closeSettingsModalButton.addEventListener('click', closeSettings);
 addQuickTitleButton.addEventListener('click', addQuickTitle);
+
+// ★追加：背景（何もないところ）をタップしたらモーダルを閉じる
+modal.addEventListener('click', (e) => {
+  if (e.target === modal) {
+    closeModal();
+  }
+});
+
+settingsModal.addEventListener('click', (e) => {
+  if (e.target === settingsModal) {
+    closeSettings();
+  }
+});
 
 // 種類ボタン（収入・支出・口座移動）
 document.querySelectorAll('.type-button').forEach(button => {
@@ -110,7 +121,6 @@ document.getElementById('importFile').addEventListener('change', importData);
 // 関数定義
 // =====================
 
-// クイック選択ボタンを描画する関数
 function renderQuickTitles() {
   quickTitlesContainer.innerHTML = '';
   quickTitles.forEach(title => {
@@ -174,7 +184,6 @@ function closeModal() {
   modal.classList.add('hidden');
 }
 
-// 設定モーダル開閉
 function openSettings() {
   renderSettingsQuickList();
   settingsModal.classList.remove('hidden');
@@ -184,7 +193,6 @@ function closeSettings() {
   settingsModal.classList.add('hidden');
 }
 
-// 設定画面内のリストを描画（削除ボタン付き）
 function renderSettingsQuickList() {
   settingsQuickList.innerHTML = '';
   quickTitles.forEach((title, index) => {
@@ -213,7 +221,6 @@ function renderSettingsQuickList() {
   });
 }
 
-// 新しいクイックタイトルを追加
 function addQuickTitle() {
   const newTitle = newQuickTitleInput.value.trim();
   if (!newTitle) return;
@@ -293,7 +300,6 @@ function toggleBalanceVisibility() {
   updateUI();
 }
 
-// 画面の更新
 function updateUI() {
   let balances = { cash: 0, olive: 0, paypay: 0, suica: 0 };
   let monthlyIncome = 0;
