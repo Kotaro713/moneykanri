@@ -30,7 +30,6 @@ const toggleBalanceButton = document.getElementById('toggleBalance');
 
 const titleInput = document.getElementById('titleInput');
 const amountInput = document.getElementById('amountInput');
-const hideAmountInput = document.getElementById('hideAmountInput'); // 追加
 const accountArea = document.getElementById('accountArea');
 const transferArea = document.getElementById('transferArea');
 const quickTitlesContainer = document.getElementById('quickTitlesContainer');
@@ -55,6 +54,7 @@ openSettingsButton.addEventListener('click', openSettings);
 closeSettingsModalButton.addEventListener('click', closeSettings);
 addQuickTitleButton.addEventListener('click', addQuickTitle);
 
+// 背景タップで閉じる
 modal.addEventListener('click', (e) => {
   if (e.target === modal) closeModal();
 });
@@ -138,7 +138,6 @@ function openModal(transaction = null) {
     saveTransactionButton.textContent = '更新する';
     titleInput.value = transaction.title;
     amountInput.value = transaction.amount;
-    hideAmountInput.checked = transaction.hidden || false; // 編集時の反映
     
     currentType = transaction.type;
     updateSelectedButton('.type-button', 'type', currentType);
@@ -162,7 +161,6 @@ function openModal(transaction = null) {
     saveTransactionButton.textContent = '追加する';
     titleInput.value = '';
     amountInput.value = '';
-    hideAmountInput.checked = false; // 新規時はチェックなし
     
     currentType = 'expense';
     updateSelectedButton('.type-button', 'type', currentType);
@@ -259,8 +257,7 @@ function saveTransaction() {
     amount: amount,
     account: selectedAccount,
     from: fromAccount,
-    to: toAccount,
-    hidden: hideAmountInput.checked // 個別非表示フラグを保存
+    to: toAccount
   };
 
   if (editingId) {
@@ -306,7 +303,6 @@ function updateUI() {
   transactionListEl.innerHTML = '';
 
   transactions.forEach(t => {
-    // 残高・月次計算は常に正確な金額で行う
     if (t.type === 'income') {
       balances[t.account] += t.amount;
     } else if (t.type === 'expense') {
@@ -333,12 +329,11 @@ function updateUI() {
       subText = accountName[t.account];
     }
 
-    // 金額表示の処理（個別非表示 or 全体非表示の考慮）
     let amountFormatted = `¥${t.amount.toLocaleString()}`;
     if (t.type === 'expense') amountFormatted = `-¥${t.amount.toLocaleString()}`;
     if (t.type === 'income') amountFormatted = `+¥${t.amount.toLocaleString()}`;
 
-    if (hideBalance || t.hidden) {
+    if (hideBalance) {
       amountFormatted = '••••';
     }
 

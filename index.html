@@ -14,7 +14,7 @@
       <h1>家計簿</h1>
       <div class="header-buttons">
         <button id="openSettings" class="icon-button" title="設定">⚙️</button>
-        <button id="toggleBalanceButton" class="icon-button" title="残高非表示切り替え">👁️</button>
+        <button id="toggleBalance" class="icon-button" title="残高非表示切り替え">👁</button>
       </div>
     </header>
 
@@ -101,12 +101,6 @@
       <div class="form-group">
         <label>金額</label>
         <input type="number" id="amountInput" placeholder="0">
-      </div>
-
-      <!-- ★ここに追加：個別非表示チェックボックス -->
-      <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-        <input type="checkbox" id="hideAmountInput" style="width: 20px; height: 20px; accent-color: var(--text-main); cursor: pointer;">
-        <label for="hideAmountInput" style="margin-bottom: 0; cursor: pointer; font-size: 14px;">この取引の金額を履歴で非表示にする</label>
       </div>
 
       <!-- 通常の口座選択 -->
