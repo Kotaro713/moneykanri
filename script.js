@@ -1,567 +1,329 @@
-// ==============================
-// Kotaro Money
-// ==============================
-
-const STORAGE_KEY = "kotaroMoneyData";
-
-// ==============================
-// データ
-// ==============================
-
-let data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
-  balances: {
-    cash: 0,
-    olive: 0,
-    paypay: 0,
-    suica: 0
-  },
-  transactions: []
-};
-
-// ==============================
-// 選択状態・編集ID
-// ==============================
-
-let selectedType = null;
-let selectedAccount = null;
-let selectedFrom = null;
-let selectedTo = null;
+// =====================
+// 初期データ・状態管理
+// =====================
+let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+let currentType = 'expense'; // デフォルトは支出
+let selectedAccount = 'cash';
+let fromAccount = 'cash';
+let toAccount = 'olive';
 let editingId = null; // 編集中のID（nullなら新規追加）
+let hideBalance = false;
 
-// ==============================
-// 保存
-// ==============================
+// DOM要素の取得
+const cashBalanceEl = document.getElementById('cashBalance');
+const oliveBalanceEl = document.getElementById('oliveBalance');
+const paypayBalanceEl = document.getElementById('paypayBalance');
+const suicaBalanceEl = document.getElementById('suicaBalance');
+const monthlyIncomeEl = document.getElementById('monthlyIncome');
+const monthlyExpenseEl = document.getElementById('monthlyExpense');
+const monthlyBalanceEl = document.getElementById('monthlyBalance');
+const transactionListEl = document.getElementById('transactionList');
+const modal = document.getElementById('modal');
+const modalTitle = document.getElementById('modalTitle');
+const addButton = document.getElementById('addButton');
+const closeModalButton = document.getElementById('closeModal');
+const saveTransactionButton = document.getElementById('saveTransaction');
+const toggleBalanceButton = document.getElementById('toggleBalance');
 
-function saveData() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
+const titleInput = document.getElementById('titleInput');
+const amountInput = document.getElementById('amountInput');
+const accountArea = document.getElementById('accountArea');
+const transferArea = document.getElementById('transferArea');
 
-// ==============================
-// 金額表示
-// ==============================
+// =====================
+// イベントリスナーの設定
+// =====================
+addButton.addEventListener('click', () => openModal());
+closeModalButton.addEventListener('click', closeModal);
+saveTransactionButton.addEventListener('click', saveTransaction);
+toggleBalanceButton.addEventListener('click', toggleBalanceVisibility);
 
-function formatMoney(amount) {
-  return "¥" + Number(amount).toLocaleString("ja-JP");
-}
-
-// ==============================
-// 残高表示
-// ==============================
-
-function updateBalances() {
-  document.getElementById("cashBalance").textContent = formatMoney(data.balances.cash);
-  document.getElementById("oliveBalance").textContent = formatMoney(data.balances.olive);
-  document.getElementById("paypayBalance").textContent = formatMoney(data.balances.paypay);
-  document.getElementById("suicaBalance").textContent = formatMoney(data.balances.suica);
-}
-
-// ==============================
-// 今月の収支
-// ==============================
-
-function updateMonthlySummary() {
-  const now = new Date();
-  let income = 0;
-  let expense = 0;
-
-  data.transactions.forEach(transaction => {
-    const date = new Date(transaction.date);
-
-    if (
-      date.getFullYear() === now.getFullYear() &&
-      date.getMonth() === now.getMonth()
-    ) {
-      if (transaction.type === "income") {
-        income += transaction.amount;
-      }
-      if (transaction.type === "expense") {
-        expense += transaction.amount;
-      }
-    }
-  });
-
-  document.getElementById("monthlyIncome").textContent = formatMoney(income);
-  document.getElementById("monthlyExpense").textContent = formatMoney(expense);
-  document.getElementById("monthlyBalance").textContent = formatMoney(income - expense);
-}
-
-// ==============================
-// 取引一覧
-// ==============================
-
-function updateTransactions() {
-  const list = document.getElementById("transactionList");
-  list.innerHTML = "";
-
-  const transactions = [...data.transactions].reverse();
-
-  transactions.forEach(transaction => {
-    const div = document.createElement("div");
-    div.className = "transaction";
-
-    const info = document.createElement("div");
-    info.className = "transaction-info";
-
-    const title = document.createElement("strong");
-    title.textContent = transaction.title;
-
-    const date = document.createElement("span");
-    date.className = "transaction-date";
-    const dateObject = new Date(transaction.date);
-    date.textContent = dateObject.toLocaleString("ja-JP");
-
-    info.appendChild(title);
-    info.appendChild(date);
-
-    const right = document.createElement("div");
-    const amount = document.createElement("strong");
-
-    if (transaction.type === "income") {
-      amount.textContent = "+" + formatMoney(transaction.amount);
-      amount.className = "income";
-    } else if (transaction.type === "expense") {
-      amount.textContent = "-" + formatMoney(transaction.amount);
-      amount.className = "expense";
+// 種類ボタン（収入・支出・口座移動）
+document.querySelectorAll('.type-button').forEach(button => {
+  button.addEventListener('click', (e) => {
+    document.querySelectorAll('.type-button').forEach(btn => btn.classList.remove('selected'));
+    e.target.classList.add('selected');
+    currentType = e.target.dataset.type;
+    
+    if (currentType === 'transfer') {
+      accountArea.classList.add('hidden');
+      transferArea.classList.remove('hidden');
     } else {
-      amount.textContent = "移動 " + formatMoney(transaction.amount);
+      accountArea.classList.remove('hidden');
+      transferArea.classList.add('hidden');
     }
-
-    right.appendChild(amount);
-
-    // 編集ボタン
-    const editButton = document.createElement("button");
-    editButton.textContent = "編集";
-    editButton.onclick = () => editTransaction(transaction.id);
-
-    // 削除ボタン
-    const deleteButton = document.createElement("button");
-    deleteButton.textContent = "削除";
-    deleteButton.onclick = () => deleteTransaction(transaction.id);
-
-    right.appendChild(editButton);
-    right.appendChild(deleteButton);
-
-    div.appendChild(info);
-    div.appendChild(right);
-
-    list.appendChild(div);
   });
-}
-
-// ==============================
-// モーダル制御
-// ==============================
-
-const modal = document.getElementById("modal");
-const addButton = document.getElementById("addButton");
-const closeModal = document.getElementById("closeModal");
-
-addButton.addEventListener("click", () => {
-  editingId = null; // 新規モード
-  document.getElementById("modalTitle").textContent = "取引を追加";
-  document.getElementById("saveTransaction").textContent = "追加する";
-  openModal();
 });
 
-closeModal.addEventListener("click", closeModalWindow);
+// 口座ボタン（通常）
+document.querySelectorAll('.account-button').forEach(button => {
+  button.addEventListener('click', (e) => {
+    document.querySelectorAll('.account-button').forEach(btn => btn.classList.remove('selected'));
+    e.target.classList.add('selected');
+    selectedAccount = e.target.dataset.account;
+  });
+});
 
-function openModal() {
-  modal.classList.remove("hidden");
-  if (editingId === null) {
-    resetForm();
+// 移動元ボタン
+document.querySelectorAll('.from-button').forEach(button => {
+  button.addEventListener('click', (e) => {
+    document.querySelectorAll('.from-button').forEach(btn => btn.classList.remove('selected'));
+    e.target.classList.add('selected');
+    fromAccount = e.target.dataset.account;
+  });
+});
+
+// 移動先ボタン
+document.querySelectorAll('.to-button').forEach(button => {
+  button.addEventListener('click', (e) => {
+    document.querySelectorAll('.to-button').forEach(btn => btn.classList.remove('selected'));
+    e.target.classList.add('selected');
+    toAccount = e.target.dataset.account;
+  });
+});
+
+// クイックタイトル選択ボタン
+document.querySelectorAll('.quick-title-btn').forEach(button => {
+  button.addEventListener('click', (e) => {
+    titleInput.value = e.target.textContent;
+  });
+});
+
+// バックアップ＆インポート
+document.getElementById('exportButton').addEventListener('click', exportData);
+document.getElementById('importButton').addEventListener('click', () => document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', importData);
+
+// =====================
+// 関数定義
+// =====================
+
+function openModal(transaction = null) {
+  modal.classList.remove('hidden');
+  
+  if (transaction) {
+    // 編集モード
+    editingId = transaction.id;
+    modalTitle.textContent = '取引を編集';
+    saveTransactionButton.textContent = '更新する';
+    titleInput.value = transaction.title;
+    amountInput.value = transaction.amount;
+    
+    currentType = transaction.type;
+    updateSelectedButton('.type-button', 'type', currentType);
+    
+    if (currentType === 'transfer') {
+      fromAccount = transaction.from;
+      toAccount = transaction.to;
+      updateSelectedButton('.from-button', 'account', fromAccount);
+      updateSelectedButton('.to-button', 'account', toAccount);
+      accountArea.classList.add('hidden');
+      transferArea.classList.remove('hidden');
+    } else {
+      selectedAccount = transaction.account;
+      updateSelectedButton('.account-button', 'account', selectedAccount);
+      accountArea.classList.remove('hidden');
+      transferArea.classList.add('hidden');
+    }
+  } else {
+    // 新規追加モード
+    editingId = null;
+    modalTitle.textContent = '取引を追加';
+    saveTransactionButton.textContent = '追加する';
+    titleInput.value = '';
+    amountInput.value = '';
+    
+    currentType = 'expense';
+    updateSelectedButton('.type-button', 'type', currentType);
+    selectedAccount = 'cash';
+    updateSelectedButton('.account-button', 'account', selectedAccount);
+    accountArea.classList.remove('hidden');
+    transferArea.classList.add('hidden');
   }
 }
 
-function closeModalWindow() {
-  modal.classList.add("hidden");
+function closeModal() {
+  modal.classList.add('hidden');
 }
 
-// ==============================
-// フォームリセット
-// ==============================
-
-function resetForm() {
-  selectedType = null;
-  selectedAccount = null;
-  selectedFrom = null;
-  selectedTo = null;
-
-  document.getElementById("titleInput").value = "";
-  document.getElementById("amountInput").value = "";
-
-  document.querySelectorAll(".choice-button").forEach(button => {
-    button.classList.remove("selected");
-  });
-
-  document.getElementById("accountArea").classList.remove("hidden");
-  document.getElementById("transferArea").classList.add("hidden");
-}
-
-// ==============================
-// 各種選択ボタンのイベント設定
-// ==============================
-
-// 種類選択
-document.querySelectorAll(".type-button").forEach(button => {
-  button.addEventListener("click", () => {
-    document.querySelectorAll(".type-button").forEach(b => b.classList.remove("selected"));
-    button.classList.add("selected");
-    selectedType = button.dataset.type;
-
-    if (selectedType === "transfer") {
-      document.getElementById("accountArea").classList.add("hidden");
-      document.getElementById("transferArea").classList.remove("hidden");
+function updateSelectedButton(selector, datasetKey, value) {
+  document.querySelectorAll(selector).forEach(btn => {
+    if (btn.dataset[datasetKey] === value) {
+      btn.classList.add('selected');
     } else {
-      document.getElementById("accountArea").classList.remove("hidden");
-      document.getElementById("transferArea").classList.add("hidden");
+      btn.classList.remove('selected');
     }
   });
-});
-
-// 通常の口座選択
-document.querySelectorAll(".account-button").forEach(button => {
-  button.addEventListener("click", () => {
-    document.querySelectorAll(".account-button").forEach(b => b.classList.remove("selected"));
-    button.classList.add("selected");
-    selectedAccount = button.dataset.account;
-  });
-});
-
-// 移動元
-document.querySelectorAll(".from-button").forEach(button => {
-  button.addEventListener("click", () => {
-    document.querySelectorAll(".from-button").forEach(b => b.classList.remove("selected"));
-    button.classList.add("selected");
-    selectedFrom = button.dataset.account;
-  });
-});
-
-// 移動先
-document.querySelectorAll(".to-button").forEach(button => {
-  button.addEventListener("click", () => {
-    document.querySelectorAll(".to-button").forEach(b => b.classList.remove("selected"));
-    button.classList.add("selected");
-    selectedTo = button.dataset.account;
-  });
-});
-
-// ==============================
-// 取引追加・編集の保存処理
-// ==============================
-
-document.getElementById("saveTransaction").addEventListener("click", saveTransaction);
+}
 
 function saveTransaction() {
-  const title = document.getElementById("titleInput").value.trim();
-  const amount = Number(document.getElementById("amountInput").value);
-
-  if (!selectedType) { alert("種類を選択してください"); return; }
-  if (!title) { alert("タイトルを入力してください"); return; }
-  if (!amount || amount <= 0) { alert("正しい金額を入力してください"); return; }
-
-  // 編集中の場合は、まず古い取引の残高反映を巻き戻す
-  if (editingId !== null) {
-    const oldTx = data.transactions.find(t => t.id === editingId);
-    if (oldTx) {
-      revertBalance(oldTx);
-    }
+  const amount = Number(amountInput.value);
+  if (!amount || amount <= 0) {
+    alert('有効な金額を入力してください');
+    return;
   }
 
-  // 新規または編集後の残高計算とトランザクション作成
-  if (selectedType === "income") {
-    if (!selectedAccount) { alert("入金先を選択してください"); restoreIfEditing(); return; }
-    data.balances[selectedAccount] += amount;
-
-    if (editingId !== null) {
-      updateExistingTransaction("income", title, amount, { account: selectedAccount });
-    } else {
-      addNewTransaction("income", title, amount, { account: selectedAccount });
-    }
-  } 
-  else if (selectedType === "expense") {
-    if (!selectedAccount) { alert("支払い方法を選択してください"); restoreIfEditing(); return; }
-    if (data.balances[selectedAccount] < amount) { alert("残高が足りません"); restoreIfEditing(); return; }
-    data.balances[selectedAccount] -= amount;
-
-    if (editingId !== null) {
-      updateExistingTransaction("expense", title, amount, { account: selectedAccount });
-    } else {
-      addNewTransaction("expense", title, amount, { account: selectedAccount });
-    }
-  } 
-  else if (selectedType === "transfer") {
-    if (!selectedFrom) { alert("移動元を選択してください"); restoreIfEditing(); return; }
-    if (!selectedTo) { alert("移動先を選択してください"); restoreIfEditing(); return; }
-    if (selectedFrom === selectedTo) { alert("移動元と移動先を別々にしてください"); restoreIfEditing(); return; }
-    if (data.balances[selectedFrom] < amount) { alert("移動元の残高が足りません"); restoreIfEditing(); return; }
-
-    data.balances[selectedFrom] -= amount;
-    data.balances[selectedTo] += amount;
-
-    if (editingId !== null) {
-      updateExistingTransaction("transfer", title, amount, { from: selectedFrom, to: selectedTo });
-    } else {
-      addNewTransaction("transfer", title, amount, { from: selectedFrom, to: selectedTo });
-    }
+  // タイトルが空の場合はデフォルト名を設定
+  let title = titleInput.value.trim();
+  if (!title) {
+    if (currentType === 'income') title = '収入';
+    else if (currentType === 'expense') title = '支出';
+    else title = '口座移動';
   }
 
-  saveData();
-  updateBalances();
-  updateMonthlySummary();
-  updateTransactions();
-  closeModalWindow();
-}
-
-// 編集時にエラーが起きたとき、巻き戻した残高を戻すヘルパー
-function restoreIfEditing() {
-  if (editingId !== null) {
-    const oldTx = data.transactions.find(t => t.id === editingId);
-    if (oldTx) { applyBalance(oldTx); }
-  }
-}
-
-function addNewTransaction(type, title, amount, details) {
-  const newTx = {
-    id: Date.now(),
-    type: type,
+  const transactionData = {
+    id: editingId ? editingId : Date.now(),
+    date: new Date().toISOString(),
+    type: currentType,
     title: title,
     amount: amount,
-    date: new Date().toISOString(),
-    ...details
+    account: selectedAccount,
+    from: fromAccount,
+    to: toAccount
   };
-  data.transactions.push(newTx);
+
+  if (editingId) {
+    const index = transactions.findIndex(t => t.id === editingId);
+    if (index !== -1) {
+      transactions[index] = transactionData;
+    }
+  } else {
+    transactions.unshift(transactionData); // 先頭に追加
+  }
+
+  saveAndRefresh();
+  closeModal();
 }
 
-function updateExistingTransaction(type, title, amount, details) {
-  const index = data.transactions.findIndex(t => t.id === editingId);
-  if (index !== -1) {
-    data.transactions[index] = {
-      ...data.transactions[index],
-      type: type,
-      title: title,
-      amount: amount,
-      ...details
+function deleteTransaction(id) {
+  if (confirm('この取引を削除しますか？')) {
+    transactions = transactions.filter(t => t.id !== id);
+    saveAndRefresh();
+  }
+}
+
+function saveAndRefresh() {
+  localStorage.setItem('transactions', JSON.stringify(transactions));
+  updateUI();
+}
+
+function toggleBalanceVisibility() {
+  hideBalance = !hideBalance;
+  toggleBalanceButton.textContent = hideBalance ? '🙈 非表示' : '👁 表示';
+  updateUI();
+}
+
+// 画面の更新（残高計算・収支・履歴の描画）
+function updateUI() {
+  let balances = { cash: 0, olive: 0, paypay: 0, suica: 0 };
+  let monthlyIncome = 0;
+  let monthlyExpense = 0;
+  
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+
+  transactionListEl.innerHTML = '';
+
+  transactions.forEach(t => {
+    // 残高計算
+    if (t.type === 'income') {
+      balances[t.account] += t.amount;
+    } else if (t.type === 'expense') {
+      balances[t.account] -= t.amount;
+    } else if (t.type === 'transfer') {
+      balances[t.from] -= t.amount;
+      balances[t.to] += t.amount;
+    }
+
+    // 今月の収支計算
+    const tDate = new Date(t.date);
+    if (tDate.getFullYear() === currentYear && tDate.getMonth() === currentMonth) {
+      if (t.type === 'income') monthlyIncome += t.amount;
+      if (t.type === 'expense') monthlyExpense += t.amount;
+    }
+
+    // 履歴カードの生成
+    const itemEl = document.createElement('div');
+    itemEl.className = 'transaction';
+    
+    let accountName = { cash: '現金', olive: 'Olive', paypay: 'PayPay', suica: 'Suica' };
+    let subText = '';
+    if (t.type === 'transfer') {
+      subText = `${accountName[t.from]} ➔ ${accountName[t.to]}`;
+    } else {
+      subText = accountName[t.account];
+    }
+
+    let amountFormatted = `¥${t.amount.toLocaleString()}`;
+    if (t.type === 'expense') amountFormatted = `-¥${t.amount.toLocaleString()}`;
+    if (t.type === 'income') amountFormatted = `+¥${t.amount.toLocaleString()}`;
+
+    itemEl.innerHTML = `
+      <div class="transaction-info">
+        <strong>${t.title}</strong>
+        <span class="transaction-date">${tDate.getMonth() + 1}/${tDate.getDate()} (${subText})</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-weight: bold;">${amountFormatted}</span>
+        <div>
+          <button onclick="editTransaction(${t.id})">編集</button>
+          <button onclick="deleteTransaction(${t.id})">削除</button>
+        </div>
+      </div>
+    `;
+    transactionListEl.appendChild(itemEl);
+  });
+
+  // 残高表示の更新（目隠し対応）
+  cashBalanceEl.textContent = hideBalance ? '••••' : `¥${balances.cash.toLocaleString()}`;
+  oliveBalanceEl.textContent = hideBalance ? '••••' : `¥${balances.olive.toLocaleString()}`;
+  paypayBalanceEl.textContent = hideBalance ? '••••' : `¥${balances.paypay.toLocaleString()}`;
+  suicaBalanceEl.textContent = hideBalance ? '••••' : `¥${balances.suica.toLocaleString()}`;
+
+  monthlyIncomeEl.textContent = `¥${monthlyIncome.toLocaleString()}`;
+  monthlyExpenseEl.textContent = `¥${monthlyExpense.toLocaleString()}`;
+  monthlyBalanceEl.textContent = `¥${(monthlyIncome - monthlyExpense).toLocaleString()}`;
+}
+
+// 編集ボタン用（グローバルスコープに配置）
+window.editTransaction = function(id) {
+  const transaction = transactions.find(t => t.id === id);
+  if (transaction) openModal(transaction);
+};
+
+// バックアップ書き出し
+function exportData() {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transactions, null, 2));
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", `kotaro_money_backup_${new Date().toISOString().slice(0, 10)}.json`);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+}
+
+// データインポート
+function importData(event) {
+  const fileReader = new FileReader();
+  if (event.target.files[0]) {
+    fileReader.readAsText(event.target.files[0], "UTF-8");
+    fileReader.onload = (e) => {
+      try {
+        const imported = JSON.parse(e.target.result);
+        if (Array.isArray(imported)) {
+          transactions = imported;
+          saveAndRefresh();
+          alert('データを復元しました！');
+        } else {
+          alert('ファイルの形式が正しくありません');
+        }
+      } catch (error) {
+        alert('JSONファイルの読み込みに失敗しました');
+      }
     };
   }
 }
 
-// ==============================
-// 削除
-// ==============================
-
-function deleteTransaction(id) {
-  const transaction = data.transactions.find(t => t.id === id);
-  if (!transaction) return;
-
-  if (!confirm("この取引を削除しますか？")) return;
-
-  revertBalance(transaction);
-
-  data.transactions = data.transactions.filter(t => t.id !== id);
-
-  saveData();
-  updateBalances();
-  updateMonthlySummary();
-  updateTransactions();
-}
-
-// ==============================
-// 残高の増減ヘルパー
-// ==============================
-
-function revertBalance(tx) {
-  if (tx.type === "income") {
-    data.balances[tx.account] -= tx.amount;
-  } else if (tx.type === "expense") {
-    data.balances[tx.account] += tx.amount;
-  } else if (tx.type === "transfer") {
-    data.balances[tx.from] += tx.amount;
-    data.balances[tx.to] -= tx.amount;
-  }
-}
-
-function applyBalance(tx) {
-  if (tx.type === "income") {
-    data.balances[tx.account] += tx.amount;
-  } else if (tx.type === "expense") {
-    data.balances[tx.account] -= tx.amount;
-  } else if (tx.type === "transfer") {
-    data.balances[tx.from] -= tx.amount;
-    data.balances[tx.to] += tx.amount;
-  }
-}
-
-// ==============================
-// 編集（モーダルを開いて値をセット）
-// ==============================
-
-function editTransaction(id) {
-  const transaction = data.transactions.find(t => t.id === id);
-  if (!transaction) return;
-
-  editingId = id;
-  document.getElementById("modalTitle").textContent = "取引を編集";
-  document.getElementById("saveTransaction").textContent = "変更を保存";
-
-  // フォームに既存の値をセット
-  document.getElementById("titleInput").value = transaction.title;
-  document.getElementById("amountInput").value = transaction.amount;
-
-  // ボタンの選択状態をリセット
-  document.querySelectorAll(".choice-button").forEach(b => b.classList.remove("selected"));
-
-  // 種類のボタンを選択
-  const typeBtn = document.querySelector(`.type-button[data-type="${transaction.type}"]`);
-  if (typeBtn) {
-    typeBtn.classList.add("selected");
-    selectedType = transaction.type;
-  }
-
-  // エリアの切り替え
-  if (transaction.type === "transfer") {
-    document.getElementById("accountArea").classList.add("hidden");
-    document.getElementById("transferArea").classList.remove("hidden");
-
-    selectedFrom = transaction.from;
-    selectedTo = transaction.to;
-    selectedAccount = null;
-
-    const fromBtn = document.querySelector(`.from-button[data-account="${transaction.from}"]`);
-    if (fromBtn) fromBtn.classList.add("selected");
-
-    const toBtn = document.querySelector(`.to-button[data-account="${transaction.to}"]`);
-    if (toBtn) toBtn.classList.add("selected");
-  } else {
-    document.getElementById("accountArea").classList.remove("hidden");
-    document.getElementById("transferArea").classList.add("hidden");
-
-    selectedAccount = transaction.account;
-    selectedFrom = null;
-    selectedTo = null;
-
-    const accBtn = document.querySelector(`.account-button[data-account="${transaction.account}"]`);
-    if (accBtn) accBtn.classList.add("selected");
-  }
-
-  // モーダルを開く
-  openModal();
-}
-
-// ==============================
-// アカウントキー・名前変換
-// ==============================
-
-function getAccountKey(name) {
-  if (name === "現金") return "cash";
-  if (name === "Olive") return "olive";
-  if (name === "PayPay") return "paypay";
-  if (name === "Suica") return "suica";
-  return null;
-}
-
-function getAccountName(account) {
-  if (account === "cash") return "現金";
-  if (account === "olive") return "Olive";
-  if (account === "paypay") return "PayPay";
-  if (account === "suica") return "Suica";
-}
-
-// ==============================
-// 残高表示 / 非表示
-// ==============================
-
-let balanceVisible = true;
-
-document.getElementById("toggleBalance").addEventListener("click", () => {
-  balanceVisible = !balanceVisible;
-
-  const balances = document.querySelectorAll(".balance-card strong");
-
-  balances.forEach(element => {
-    if (balanceVisible) {
-      const account = element.id.replace("Balance", "");
-      element.textContent = formatMoney(data.balances[account]);
-    } else {
-      element.textContent = "••••";
-    }
-  });
-
-  document.getElementById("toggleBalance").textContent = balanceVisible
-    ? "👁 表示"
-    : "🙈 非表示";
-});
-
-// ==============================
-// 初期表示
-// ==============================
-
-updateBalances();
-updateMonthlySummary();
-updateTransactions();
-// ==============================
-// バックアップ（ファイル書き出し）
-// ==============================
-
-document.getElementById("exportButton").addEventListener("click", () => {
-  const jsonString = JSON.stringify(data, null, 2);
-  const blob = new Blob([jsonString], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  
-  const a = document.createElement("a");
-  a.href = url;
-  
-  // ファイル名を日付付きにする（例: kotaro-money-backup-2026-10-02.json）
-  const today = new Date().toISOString().split("T")[0];
-  a.download = `kotaro-money-backup-${today}.json`;
-  
-  a.click();
-  URL.revokeObjectURL(url);
-});
-
-// ==============================
-// 復元（ファイル読み込み）
-// ==============================
-
-const importButton = document.getElementById("importButton");
-const importFile = document.getElementById("importFile");
-
-importButton.addEventListener("click", () => {
-  importFile.click(); // 隠してあるファイル選択を開く
-});
-
-importFile.addEventListener("change", (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  if (!confirm("既存のデータがバックアップファイルの内容で上書きされますが、よろしいですか？")) {
-    importFile.value = "";
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const importedData = JSON.parse(e.target.result);
-      
-      // 最低限のデータ構造チェック
-      if (!importedData.balances || !importedData.transactions) {
-        throw new Error("無効なデータ形式です");
-      }
-
-      data = importedData;
-      saveData();
-
-      updateBalances();
-      updateMonthlySummary();
-      updateTransactions();
-
-      alert("データを正常に復元しました！");
-    } catch (error) {
-      alert("ファイルの読み込みに失敗しました。正しいバックアップファイルを選択してください。");
-    } finally {
-      importFile.value = "";
-    }
-  };
-
-  reader.readAsText(file);
-});
+// 初期化実行
+updateUI();
