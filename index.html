@@ -16,7 +16,10 @@
   <div class="container">
     <header>
       <h1>Kotaro Money</h1>
-      <button id="toggleBalance" class="sub-button-small">👁 表示</button>
+      <div style="display: flex; gap: 8px;">
+        <button id="openSettings" class="sub-button-small">⚙️ 設定</button>
+        <button id="toggleBalance" class="sub-button-small">👁 表示</button>
+      </div>
     </header>
 
     <!-- 残高カード -->
@@ -90,13 +93,9 @@
       <div class="form-group">
         <label>タイトル（省略可能）</label>
         <input type="text" id="titleInput" placeholder="例: 昼食、カラオケなど">
-        <!-- よく使うタイトルの選択肢 -->
-        <div class="quick-titles" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
-          <button type="button" class="quick-title-btn choice-button" style="font-size: 12px; padding: 6px 10px;">昼食</button>
-          <button type="button" class="quick-title-btn choice-button" style="font-size: 12px; padding: 6px 10px;">おやつ</button>
-          <button type="button" class="quick-title-btn choice-button" style="font-size: 12px; padding: 6px 10px;">夕食</button>
-          <button type="button" class="quick-title-btn choice-button" style="font-size: 12px; padding: 6px 10px;">カラオケ</button>
-		  <button type="button" class="quick-title-btn choice-button" style="font-size: 12px; padding: 6px 10px;">チャージ</button>
+        <!-- よく使うタイトルの選択肢（JavaScriptで動的に生成） -->
+        <div id="quickTitlesContainer" class="quick-titles" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+          <!-- JSでボタンが挿入されます -->
         </div>
       </div>
 
@@ -139,6 +138,31 @@
       <div class="modal-buttons">
         <button id="saveTransaction" class="primary-button">追加する</button>
         <button id="closeModal" class="cancel-button">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 設定モーダル（クイックボタン編集用） -->
+  <div id="settingsModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>クイックボタン編集</h2>
+      <div class="form-group">
+        <label>新しいボタンを追加</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="newQuickTitleInput" placeholder="例: 文房具、交通費など">
+          <button type="button" id="addQuickTitleButton" class="primary-button" style="width: 100px; margin-bottom: 0; padding: 14px 8px;">追加</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>登録済みのボタン（タップして削除）</label>
+        <div id="settingsQuickList" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+          <!-- JSで削除ボタン付きのリストが生成されます -->
+        </div>
+      </div>
+
+      <div class="modal-buttons" style="margin-top: 20px;">
+        <button id="closeSettingsModal" class="primary-button">完了</button>
       </div>
     </div>
   </div>
