@@ -1,176 +1,140 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>マイ家計簿</title>
-    <!-- PWA & iOS設定 -->
-    <link rel="apple-touch-icon" href="icon.jpg">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f8f9fa;
-            color: #333333;
-            margin: 0;
-            padding: 15px;
-            padding-bottom: 50px;
-        }
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-        }
-        h1 { font-size: 1.4rem; margin-bottom: 15px; text-align: center; }
-        .card {
-            background: #ffffff;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            margin-bottom: 15px;
-            border: 1px solid #e0e0e0;
-        }
-        input, select, button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 8px;
-            margin-bottom: 12px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 1rem;
-            background: #ffffff;
-            color: #333333;
-        }
-        button {
-            background-color: #007aff;
-            color: white;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        button:active { opacity: 0.8; }
-        ul { list-style: none; padding: 0; margin: 0; }
-        li {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        .delete-btn {
-            background: #ff3b30;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            width: auto;
-            margin: 0;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kotaro Money</title>
+  <link rel="stylesheet" href="style.css">
+
+  <!-- スマホアプリ化の設定 -->
+  <link rel="apple-touch-icon" href="icon.jpeg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
-<div class="container">
-    <h1>マイ家計簿</h1>
 
-    <!-- 入力フォーム -->
-    <div class="card">
-        <h3>✍️ 収支の記録</h3>
-        <input type="text" id="desc" placeholder="内容（例：スーパー）">
-        <input type="number" id="amount" placeholder="金額（円）">
-        <select id="category">
-            <option value="食費">食費</option>
-            <option value="交通費">交通費</option>
-            <option value="娯楽">娯楽</option>
-            <option value="その他">その他</option>
-        </select>
-        <button onclick="addTransaction()">追加する</button>
+  <div class="container">
+    <header>
+      <h1>Kotaro Money</h1>
+      <button id="toggleBalance" class="sub-button-small">👁 表示</button>
+    </header>
+
+    <!-- 残高カード -->
+    <section class="balance-card">
+      <div class="balance-item">
+        <span>現金</span>
+        <strong id="cashBalance">¥0</strong>
+      </div>
+      <div class="balance-item">
+        <span>Olive</span>
+        <strong id="oliveBalance">¥0</strong>
+      </div>
+      <div class="balance-item">
+        <span>PayPay</span>
+        <strong id="paypayBalance">¥0</strong>
+      </div>
+      <div class="balance-item">
+        <span>Suica</span>
+        <strong id="suicaBalance">¥0</strong>
+      </div>
+    </section>
+
+    <!-- 今月の収支 -->
+    <section class="summary-card">
+      <h2>今月の収支</h2>
+      <div class="summary-details">
+        <div>収入: <span id="monthlyIncome" class="income">¥0</span></div>
+        <div>支出: <span id="monthlyExpense" class="expense">¥0</span></div>
+        <div>収支: <span id="monthlyBalance">¥0</span></div>
+      </div>
+    </section>
+
+    <!-- 取引追加ボタン -->
+    <button id="addButton" class="primary-button">＋ 取引を追加</button>
+
+    <!-- バックアップ・復元セクション -->
+    <section class="backup-section">
+      <h2>データ管理</h2>
+      <div class="backup-buttons">
+        <button id="exportButton" class="sub-button">📥 バックアップを保存</button>
+        <input type="file" id="importFile" accept=".json" style="display: none;">
+        <button id="importButton" class="sub-button">📤 データを復元</button>
+      </div>
+    </section>
+
+    <!-- 取引履歴 -->
+    <section class="history-section">
+      <h2>取引履歴</h2>
+      <div id="transactionList" class="transaction-list">
+        <!-- JavaScriptで動的に生成 -->
+      </div>
+    </section>
+  </div>
+
+  <!-- モーダル（取引追加・編集） -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <h2 id="modalTitle">取引を追加</h2>
+
+      <!-- 種類選択 -->
+      <div class="form-group">
+        <label>種類</label>
+        <div class="button-group">
+          <button type="button" class="choice-button type-button" data-type="income">収入</button>
+          <button type="button" class="choice-button type-button" data-type="expense">支出</button>
+          <button type="button" class="choice-button type-button" data-type="transfer">口座移動</button>
+        </div>
+      </div>
+
+      <!-- タイトル -->
+      <div class="form-group">
+        <label>タイトル</label>
+        <input type="text" id="titleInput" placeholder="例: ランチ、給料など">
+      </div>
+
+      <!-- 金額 -->
+      <div class="form-group">
+        <label>金額</label>
+        <input type="number" id="amountInput" placeholder="0">
+      </div>
+
+      <!-- 通常の口座選択（収入・支出用） -->
+      <div id="accountArea" class="form-group">
+        <label>口座 / 支払い方法</label>
+        <div class="button-group">
+          <button type="button" class="choice-button account-button" data-account="cash">現金</button>
+          <button type="button" class="choice-button account-button" data-account="olive">Olive</button>
+          <button type="button" class="choice-button account-button" data-account="paypay">PayPay</button>
+          <button type="button" class="choice-button account-button" data-account="suica">Suica</button>
+        </div>
+      </div>
+
+      <!-- 口座移動用エリア -->
+      <div id="transferArea" class="form-group hidden">
+        <label>移動元</label>
+        <div class="button-group">
+          <button type="button" class="choice-button from-button" data-account="cash">現金</button>
+          <button type="button" class="choice-button from-button" data-account="olive">Olive</button>
+          <button type="button" class="choice-button from-button" data-account="paypay">PayPay</button>
+          <button type="button" class="choice-button from-button" data-account="suica">Suica</button>
+        </div>
+        <label style="margin-top: 10px; display: block;">移動先</label>
+        <div class="button-group">
+          <button type="button" class="choice-button to-button" data-account="cash">現金</button>
+          <button type="button" class="choice-button to-button" data-account="olive">Olive</button>
+          <button type="button" class="choice-button to-button" data-account="paypay">PayPay</button>
+          <button type="button" class="choice-button to-button" data-account="suica">Suica</button>
+        </div>
+      </div>
+
+      <!-- 保存・閉じるボタン -->
+      <div class="modal-buttons">
+        <button id="saveTransaction" class="primary-button">追加する</button>
+        <button id="closeModal" class="cancel-button">キャンセル</button>
+      </div>
     </div>
+  </div>
 
-    <!-- 合計と履歴 -->
-    <div class="card">
-        <h3>📋 履歴一覧</h3>
-        <p id="totalDisplay" style="font-weight: bold; margin-bottom: 10px;">合計支出: 0円</p>
-        <ul id="transactionList"></ul>
-    </div>
-
-    <!-- バックアップボタン -->
-    <div style="text-align: center; margin-bottom: 20px;">
-        <button onclick="exportData()" style="background: #5856d6; width: auto; display: inline-block; padding: 8px 16px;">データ書き出し (JSON)</button>
-    </div>
-</div>
-
-<script>
-    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
-
-    window.onload = function() {
-        renderApp();
-    };
-
-    function addTransaction() {
-        const desc = document.getElementById('desc').value;
-        const amount = Number(document.getElementById('amount').value);
-        const category = document.getElementById('category').value;
-
-        if(!desc || !amount) {
-            alert('内容と金額を入力してね！');
-            return;
-        }
-
-        transactions.unshift({
-            id: Date.now(),
-            desc,
-            amount,
-            category,
-            date: new Date().toLocaleDateString()
-        });
-
-        document.getElementById('desc').value = '';
-        document.getElementById('amount').value = '';
-        saveAndRender();
-    }
-
-    function deleteTransaction(id) {
-        transactions = transactions.filter(t => t.id !== id);
-        saveAndRender();
-    }
-
-    function saveAndRender() {
-        localStorage.setItem('transactions', JSON.stringify(transactions));
-        renderApp();
-    }
-
-    function renderApp() {
-        const listEl = document.getElementById('transactionList');
-        listEl.innerHTML = '';
-        let total = 0;
-
-        transactions.forEach(t => {
-            total += t.amount;
-            const li = document.createElement('li');
-            li.innerHTML = `
-                <span><b>${t.desc}</b> (${t.category})<br><small style="color:#666;">${t.date}</small></span>
-                <span>
-                    ¥${t.amount.toLocaleString()} 
-                    <button class="delete-btn" onclick="deleteTransaction(${t.id})">削除</button>
-                </span>
-            `;
-            listEl.appendChild(li);
-        });
-
-        document.getElementById('totalDisplay').innerText = `合計支出: ¥${total.toLocaleString()}`;
-    }
-
-    function exportData() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transactions));
-        const dlAnchor = document.createElement('a');
-        dlAnchor.setAttribute("href", dataStr);
-        dlAnchor.setAttribute("download", "kakeibo_backup.json");
-        document.body.appendChild(dlAnchor);
-        dlAnchor.click();
-        dlAnchor.remove();
-    }
-</script>
+  <script src="script.js"></script>
 </body>
 </html>
