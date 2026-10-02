@@ -1,371 +1,367 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>マイ家計簿</title>
+    <!-- PWA & iOS設定 -->
+    <link rel="apple-touch-icon" href="icon.jpg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Chart.js（グラフ用） -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --sub-text: #666666;
+            --border-color: #e0e0e0;
+            --primary-color: #007aff;
+            --danger-color: #ff3b30;
+            --accent-color: #34c759;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #f1f1f1;
+            --sub-text: #aaaaaa;
+            --border-color: #333333;
+            --primary-color: #0a84ff;
+            --danger-color: #ff453a;
+            --accent-color: #30d158;
+        }
 
-  <title>Kotaro Money</title>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+            padding-bottom: 50px;
+            transition: background 0.3s, color 0.3s;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        h1 { font-size: 1.4rem; margin: 0; }
+        
+        .card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+        }
+        
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:active { opacity: 0.8; }
 
-  <link rel="stylesheet" href="style.css">
- <!-- スマホアプリ化の設定 -->
-  <link rel="apple-touch-icon" href="icon.jpg">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        /* タブ・グリッド */
+        .row { display: flex; gap: 10px; }
+        .row > * { flex: 1; }
+
+        /* 履歴リスト */
+        ul { list-style: none; padding: 0; margin: 0; }
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .delete-btn {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            width: auto;
+            margin: 0;
+        }
+
+        /* 貯金プログレスバー */
+        .progress-bar-container {
+            background: var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            height: 16px;
+            margin-top: 8px;
+        }
+        .progress-bar {
+            background: var(--accent-color);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s;
+        }
+    </style>
 </head>
-
-<body>
-
-  <div class="app">
-
+<body data-theme="light">
+<div class="container">
     <header>
-      <h1>Kotaro Money</h1>
-      <p>自分専用のお金管理</p>
+        <h1>マイ家計簿</h1>
+        <button onclick="toggleTheme()" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">🌙 切替</button>
     </header>
 
-
-    <!-- 今月の収支 -->
-
-    <section class="summary">
-
-      <h2>今月の収支</h2>
-
-      <div id="monthlyBalance">
-        ¥0
-      </div>
-
-      <div class="income-expense">
-
-        <div>
-          <span>収入</span>
-          <strong id="monthlyIncome">
-            ¥0
-          </strong>
+    <!-- 8. 目標・貯金トラッカー -->
+    <div class="card">
+        <h3>🎯 貯金目標トラッカー</h3>
+        <input type="text" id="goalName" placeholder="目標名（例：旅行）" oninput="saveGoal()">
+        <div class="row">
+            <input type="number" id="goalTarget" placeholder="目標金額" oninput="saveGoal()">
+            <input type="number" id="goalCurrent" placeholder="現在の貯金額" oninput="saveGoal()">
         </div>
-
-        <div>
-          <span>支出</span>
-          <strong id="monthlyExpense">
-            ¥0
-          </strong>
+        <div style="font-size: 0.9rem; margin-top: 5px;" id="goalStatus">達成率: 0%</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar"></div>
         </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- 残高 -->
-
-    <section>
-
-      <div class="section-title">
-
-        <h2>残高</h2>
-
-        <button id="toggleBalance">
-          👁 表示
-        </button>
-
-      </div>
-
-
-      <div class="balance-card">
-
-        <span>現金</span>
-
-        <strong id="cashBalance">
-          ¥0
-        </strong>
-
-      </div>
-
-
-      <div class="balance-card">
-
-        <span>Olive</span>
-
-        <strong id="oliveBalance">
-          ¥0
-        </strong>
-
-      </div>
-
-
-      <div class="balance-card">
-
-        <span>PayPay</span>
-
-        <strong id="paypayBalance">
-          ¥0
-        </strong>
-
-      </div>
-
-
-      <div class="balance-card">
-
-        <span>Suica</span>
-
-        <strong id="suicaBalance">
-          ¥0
-        </strong>
-
-      </div>
-
-    </section>
-
-
-    <!-- 追加ボタン -->
-
-    <button id="addButton">
-      ＋ 収支を追加
-    </button>
-
-
-    <!-- 最近の取引 -->
-
-    <section>
-
-      <h2>最近の取引</h2>
-
-      <div id="transactionList"></div>
-
-    </section>
-
-  </div>
-
-
-  <!-- 取引入力画面 -->
-
-  <div id="modal" class="modal hidden">
-
-    <div class="modal-content">
-		<h2 id="modalTitle">取引を追加</h2>
-
-      <div class="modal-header">
-
-        <h2>取引を追加</h2>
-
-        <button id="closeModal">
-          ×
-        </button>
-
-      </div>
-
-
-      <!-- 種類 -->
-
-      <div class="form-group">
-
-        <label>種類</label>
-
-        <div class="choice-group">
-
-          <button
-            class="choice-button type-button"
-            data-type="income">
-            収入
-          </button>
-
-          <button
-            class="choice-button type-button"
-            data-type="expense">
-            支出
-          </button>
-
-          <button
-            class="choice-button type-button"
-            data-type="transfer">
-            資金移動
-          </button>
-
-        </div>
-
-      </div>
-
-
-      <!-- タイトル -->
-
-      <div class="form-group">
-
-        <label for="titleInput">
-          タイトル
-        </label>
-
-        <input
-          id="titleInput"
-          type="text"
-          placeholder="例：昼ごはん">
-
-      </div>
-
-
-      <!-- 金額 -->
-
-      <div class="form-group">
-
-        <label for="amountInput">
-          金額
-        </label>
-
-        <input
-          id="amountInput"
-          type="number"
-          inputmode="numeric"
-          placeholder="例：800">
-
-      </div>
-
-
-      <!-- 通常の口座 -->
-
-      <div
-        id="accountArea"
-        class="form-group">
-
-        <label>支払い・入金先</label>
-
-        <div class="choice-group">
-
-          <button
-            class="choice-button account-button"
-            data-account="cash">
-            現金
-          </button>
-
-          <button
-            class="choice-button account-button"
-            data-account="olive">
-            Olive
-          </button>
-
-          <button
-            class="choice-button account-button"
-            data-account="paypay">
-            PayPay
-          </button>
-
-          <button
-            class="choice-button account-button"
-            data-account="suica">
-            Suica
-          </button>
-
-        </div>
-
-      </div>
-
-
-      <!-- 資金移動 -->
-
-      <div
-        id="transferArea"
-        class="hidden">
-
-        <div class="form-group">
-
-          <label>移動元</label>
-
-          <div class="choice-group">
-
-            <button
-              class="choice-button from-button"
-              data-account="cash">
-              現金
-            </button>
-
-            <button
-              class="choice-button from-button"
-              data-account="olive">
-              Olive
-            </button>
-
-            <button
-              class="choice-button from-button"
-              data-account="paypay">
-              PayPay
-            </button>
-
-            <button
-              class="choice-button from-button"
-              data-account="suica">
-              Suica
-            </button>
-
-          </div>
-
-        </div>
-
-
-        <div class="transfer-arrow">
-          ↓
-        </div>
-
-
-        <div class="form-group">
-
-          <label>移動先</label>
-
-          <div class="choice-group">
-
-            <button
-              class="choice-button to-button"
-              data-account="cash">
-              現金
-            </button>
-
-            <button
-              class="choice-button to-button"
-              data-account="olive">
-              Olive
-            </button>
-
-            <button
-              class="choice-button to-button"
-              data-account="paypay">
-              PayPay
-            </button>
-
-            <button
-              class="choice-button to-button"
-              data-account="suica">
-              Suica
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-      <!-- 決定 -->
-
-      <button
-        id="saveTransaction"
-        class="save-button">
-
-        追加する
-
-      </button>
-
     </div>
 
-  </div>
+    <!-- 3. ワンタップ入力（テンプレート） -->
+    <div class="card">
+        <h3>⚡ ワンタップテンプレート</h3>
+        <div class="row">
+            <button onclick="quickAdd('食費', 1000)">弁当 1,000円</button>
+            <button onclick="quickAdd('カフェ', 500)">コーヒー 500円</button>
+            <button onclick="quickAdd('交通費', 600)">電車 600円</button>
+        </div>
+    </div>
 
+    <!-- 入力フォーム -->
+    <div class="card">
+        <h3>✍️ 収支の記録</h3>
+        <input type="text" id="desc" placeholder="内容（例：スーパー）">
+        <input type="number" id="amount" placeholder="金額（円）">
+        <select id="category">
+            <option value="食費">食費</option>
+            <option value="交通費">交通費</option>
+            <option value="娯楽">娯楽</option>
+            <option value="その他">その他</option>
+        </select>
+        <button onclick="addTransaction()">追加する</button>
+    </div>
 
-  <script src="script.js"></script>
+    <!-- 1. グラフ機能 -->
+    <div class="card">
+        <h3>📊 支出の内訳グラフ</h3>
+        <canvas id="expenseChart"></canvas>
+    </div>
 
+    <!-- 5. 月ごとの比較・サマリー -->
+    <div class="card">
+        <h3>📅 今月のサマリー</h3>
+        <p id="monthlySummary">今月の合計支出: 0円</p>
+    </div>
+
+    <!-- 6. 検索＆フィルター機能 -->
+    <div class="card">
+        <h3>🔍 履歴の検索・フィルター</h3>
+        <input type="text" id="searchInput" placeholder="キーワードで検索..." oninput="renderApp()">
+        <select id="filterCategory" onchange="renderApp()">
+            <option value="すべて">すべてのカテゴリー</option>
+            <option value="食費">食費</option>
+            <option value="交通費">交通費</option>
+            <option value="娯楽">娯楽</option>
+            <option value="その他">その他</option>
+        </select>
+        
+        <ul id="transactionList"></ul>
+    </div>
+
+    <!-- バックアップボタン -->
+    <div style="text-align: center; margin-bottom: 20px;">
+        <button onclick="exportData()" style="background: #5856d6; width: auto; display: inline-block; padding: 8px 16px;">データ書き出し</button>
+    </div>
+</div>
+
+<script>
+    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+    let goalData = JSON.parse(localStorage.getItem('goalData')) || { name: '', target: 0, current: 0 };
+    let chartInstance = null;
+
+    // 初期化
+    window.onload = function() {
+        if(localStorage.getItem('theme') === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+        }
+        loadGoal();
+        renderApp();
+    };
+
+    // 9. ダークモード切替
+    function toggleTheme() {
+        const current = document.body.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.body.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+    }
+
+    // 3. ワンタップ追加
+    function quickAdd(category, amount) {
+        const names = { '食費': 'お弁当・ランチ', 'カフェ': 'コーヒー', '交通費': '電車代' };
+        transactions.unshift({
+            id: Date.now(),
+            desc: category === 'カフェ' ? 'コーヒー' : category,
+            amount: amount,
+            category: category === 'カフェ' ? '食費' : category,
+            date: new Date().toLocaleDateString()
+        });
+        saveAndRender();
+    }
+
+    // 記録追加
+    function addTransaction() {
+        const desc = document.getElementById('desc').value;
+        const amount = Number(document.getElementById('amount').value);
+        const category = document.getElementById('category').value;
+
+        if(!desc || !amount) {
+            alert('内容と金額を入力してね！');
+            return;
+        }
+
+        transactions.unshift({
+            id: Date.now(),
+            desc,
+            amount,
+            category,
+            date: new Date().toLocaleDateString()
+        });
+
+        document.getElementById('desc').value = '';
+        document.getElementById('amount').value = '';
+        saveAndRender();
+    }
+
+    // 削除
+    function deleteTransaction(id) {
+        transactions = transactions.filter(t => t.id !== id);
+        saveAndRender();
+    }
+
+    function saveAndRender() {
+        localStorage.setItem('transactions', JSON.stringify(transactions));
+        renderApp();
+    }
+
+    // 8. 貯金目標保存
+    function saveGoal() {
+        goalData.name = document.getElementById('goalName').value;
+        goalData.target = Number(document.getElementById('goalTarget').value) || 0;
+        goalData.current = Number(document.getElementById('goalCurrent').value) || 0;
+        localStorage.setItem('goalData', JSON.stringify(goalData));
+        updateGoalUI();
+    }
+
+    function loadGoal() {
+        document.getElementById('goalName').value = goalData.name || '';
+        document.getElementById('goalTarget').value = goalData.target || '';
+        document.getElementById('goalCurrent').value = goalData.current || '';
+        updateGoalUI();
+    }
+
+    function updateGoalUI() {
+        const percent = goalData.target > 0 ? Math.min(Math.floor((goalData.current / goalData.target) * 100), 100) : 0;
+        document.getElementById('goalStatus').innerText = `目標: ${goalData.name || '未設定'} (${percent}%)`;
+        document.getElementById('progressBar').style.width = percent + '%';
+    }
+
+    // 描画・検索・グラフ更新まとめ
+    function renderApp() {
+        const keyword = document.getElementById('searchInput').value.toLowerCase();
+        const filterCat = document.getElementById('filterCategory').value;
+        const listEl = document.getElementById('transactionList');
+        
+        listEl.innerHTML = '';
+        let monthlyTotal = 0;
+        let catTotals = { '食費': 0, '交通費': 0, '娯楽': 0, 'その他': 0 };
+
+        const filtered = transactions.filter(t => {
+            const matchKeyword = t.desc.toLowerCase().includes(keyword);
+            const matchCat = (filterCat === 'すべて' || t.category === filterCat);
+            return matchKeyword && matchCat;
+        });
+
+        filtered.forEach(t => {
+            monthlyTotal += t.amount;
+            if(catTotals[t.category] !== undefined) {
+                catTotals[t.category] += t.amount;
+            }
+
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span><b>${t.desc}</b> (${t.category})<br><small style="color:var(--sub-text);">${t.date}</small></span>
+                <span>
+                    ¥${t.amount.toLocaleString()} 
+                    <button class="delete-btn" onclick="deleteTransaction(${t.id})">削除</button>
+                </span>
+            `;
+            listEl.appendChild(li);
+        });
+
+        document.getElementById('monthlySummary').innerText = `今月の合計支出: ¥${monthlyTotal.toLocaleString()}`;
+
+        // 1. グラフ更新
+        updateChart(catTotals);
+    }
+
+    function updateChart(catTotals) {
+        const ctx = document.getElementById('expenseChart').getContext('2d');
+        if(chartInstance) {
+            chartInstance.destroy();
+        }
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(catTotals),
+                datasets: [{
+                    data: Object.values(catTotals),
+                    backgroundColor: ['#ff9500', '#007aff', '#af52de', '#8e8e93']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    function exportData() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transactions));
+        const dlAnchor = document.createElement('a');
+        dlAnchor.setAttribute("href", dataStr);
+        dlAnchor.setAttribute("download", "kakeibo_backup.json");
+        document.body.appendChild(dlAnchor);
+        dlAnchor.click();
+        dlAnchor.remove();
+    }
+</script>
 </body>
-
 </html>
-<!-- バックアップ・復元セクション -->
-  <section class="backup-section">
-    <h2>データ管理</h2>
-    <div class="backup-buttons">
-      <button id="exportButton" class="sub-button">📥 バックアップを保存</button>
-      <input type="file" id="importFile" accept=".json" style="display: none;">
-      <button id="importButton" class="sub-button">📤 データを復元</button>
-    </div>
-  </section>
