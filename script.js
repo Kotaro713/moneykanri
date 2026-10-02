@@ -3,6 +3,7 @@
 // =====================
 let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 let quickTitles = JSON.parse(localStorage.getItem('quickTitles')) || ['昼食', 'おやつ', '夕食', 'カラオケ'];
+let quickAmounts = JSON.parse(localStorage.getItem('quickAmounts')) || [100, 500, 1000, 2000];
 
 let currentType = 'expense'; 
 let selectedAccount = 'cash';
@@ -42,14 +43,20 @@ const amountInput = document.getElementById('amountInput');
 const accountArea = document.getElementById('accountArea');
 const transferArea = document.getElementById('transferArea');
 const quickTitlesContainer = document.getElementById('quickTitlesContainer');
+const quickAmountsContainer = document.getElementById('quickAmountsContainer');
 
 // 設定モーダル用DOM
 const settingsModal = document.getElementById('settingsModal');
 const openSettingsButton = document.getElementById('openSettings');
 const closeSettingsModalButton = document.getElementById('closeSettingsModal');
+
 const newQuickTitleInput = document.getElementById('newQuickTitleInput');
 const addQuickTitleButton = document.getElementById('addQuickTitleButton');
 const settingsQuickList = document.getElementById('settingsQuickList');
+
+const newQuickAmountInput = document.getElementById('newQuickAmountInput');
+const addQuickAmountButton = document.getElementById('addQuickAmountButton');
+const settingsQuickAmountList = document.getElementById('settingsQuickAmountList');
 
 // =====================
 // イベントリスナーの設定
@@ -74,6 +81,7 @@ nextMonthButton.addEventListener('click', () => {
 openSettingsButton.addEventListener('click', openSettings);
 closeSettingsModalButton.addEventListener('click', closeSettings);
 addQuickTitleButton.addEventListener('click', addQuickTitle);
+addQuickAmountButton.addEventListener('click', addQuickAmount);
 
 // 背景タップでモーダルを閉じる
 modal.addEventListener('click', (e) => {
@@ -157,8 +165,25 @@ function renderQuickTitles() {
   });
 }
 
+function renderQuickAmounts() {
+  quickAmountsContainer.innerHTML = '';
+  quickAmounts.forEach(amount => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'quick-amount-btn choice-button';
+    btn.style.fontSize = '12px';
+    btn.style.padding = '6px 10px';
+    btn.textContent = `¥${amount.toLocaleString()}`;
+    btn.addEventListener('click', () => {
+      amountInput.value = amount;
+    });
+    quickAmountsContainer.appendChild(btn);
+  });
+}
+
 function openModal(transaction = null) {
   renderQuickTitles();
+  renderQuickAmounts();
   modal.classList.remove('hidden');
   
   if (transaction) {
@@ -206,6 +231,7 @@ function closeModal() {
 
 function openSettings() {
   renderSettingsQuickList();
+  renderSettingsQuickAmountList();
   settingsModal.classList.remove('hidden');
 }
 
@@ -241,6 +267,34 @@ function renderSettingsQuickList() {
   });
 }
 
+function renderSettingsQuickAmountList() {
+  settingsQuickAmountList.innerHTML = '';
+  quickAmounts.forEach((amount, index) => {
+    const tag = document.createElement('div');
+    tag.style.display = 'inline-flex';
+    tag.style.alignItems = 'center';
+    tag.style.gap = '6px';
+    tag.style.background = 'rgba(128, 128, 128, 0.1)';
+    tag.style.padding = '6px 12px';
+    tag.style.borderRadius = '8px';
+    tag.style.fontSize = '13px';
+    tag.style.fontWeight = '600';
+
+    tag.innerHTML = `
+      <span>¥${amount.toLocaleString()}</span>
+      <button type="button" style="background: none; border: none; color: #ff3b30; cursor: pointer; font-weight: bold; font-size: 14px;">×</button>
+    `;
+
+    tag.querySelector('button').addEventListener('click', () => {
+      quickAmounts.splice(index, 1);
+      localStorage.setItem('quickAmounts', JSON.stringify(quickAmounts));
+      renderSettingsQuickAmountList();
+    });
+
+    settingsQuickAmountList.appendChild(tag);
+  });
+}
+
 function addQuickTitle() {
   const newTitle = newQuickTitleInput.value.trim();
   if (!newTitle) return;
@@ -252,6 +306,24 @@ function addQuickTitle() {
   localStorage.setItem('quickTitles', JSON.stringify(quickTitles));
   newQuickTitleInput.value = '';
   renderSettingsQuickList();
+}
+
+function addQuickAmount() {
+  const newAmount = Number(newQuickAmountInput.value);
+  if (!newAmount || newAmount <= 0) {
+    alert('有効な金額を入力してください');
+    return;
+  }
+  if (quickAmounts.includes(newAmount)) {
+    alert('すでに存在します');
+    return;
+  }
+  quickAmounts.push(newAmount);
+  // 小さい順に並び替えると使いやすい
+  quickAmounts.sort((a, b) => a - b);
+  localStorage.setItem('quickAmounts', JSON.stringify(quickAmounts));
+  newQuickAmountInput.value = '';
+  renderSettingsQuickAmountList();
 }
 
 function updateSelectedButton(selector, datasetKey, value) {
