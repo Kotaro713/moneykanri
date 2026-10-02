@@ -105,6 +105,12 @@
         <input type="number" id="amountInput" placeholder="0">
       </div>
 
+      <!-- 個別非表示チェックボックス -->
+      <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+        <input type="checkbox" id="hideAmountInput" style="width: 20px; height: 20px; accent-color: var(--text-main); cursor: pointer;">
+        <label for="hideAmountInput" style="margin-bottom: 0; cursor: pointer; font-size: 14px;">この取引の金額を履歴で非表示にする</label>
+      </div>
+
       <!-- 通常の口座選択（収入・支出用） -->
       <div id="accountArea" class="form-group">
         <label>口座 / 支払い方法</label>
