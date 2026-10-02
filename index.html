@@ -3,99 +3,97 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kotaro Money</title>
+  <title>家計簿アプリ</title>
   <link rel="stylesheet" href="style.css">
-
-  <!-- スマホアプリ化の設定 -->
-  <link rel="apple-touch-icon" href="icon.jpeg">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 
   <div class="container">
-    <header>
-      <h1>Kotaro Money</h1>
-      <div style="display: flex; gap: 8px;">
-        <button id="openSettings" class="sub-button-small">⚙️ 設定</button>
-        <button id="toggleBalance" class="sub-button-small">👁 表示</button>
+    <!-- ヘッダー -->
+    <header class="header">
+      <h1>家計簿</h1>
+      <div class="header-buttons">
+        <button id="openSettings" class="icon-button" title="設定">⚙️</button>
+        <button id="toggleBalanceButton" class="icon-button" title="残高非表示切り替え">👁️</button>
       </div>
     </header>
 
-    <!-- 残高カード -->
-    <section class="balance-card">
-      <div class="balance-item">
-        <span>現金</span>
-        <strong id="cashBalance">¥0</strong>
+    <!-- 残高カードエリア -->
+    <section class="balance-section">
+      <div class="balance-card">
+        <span class="account-label">現金</span>
+        <span id="cashBalance" class="balance-amount">¥0</span>
       </div>
-      <div class="balance-item">
-        <span>Olive</span>
-        <strong id="oliveBalance">¥0</strong>
+      <div class="balance-card">
+        <span class="account-label">Olive</span>
+        <span id="oliveBalance" class="balance-amount">¥0</span>
       </div>
-      <div class="balance-item">
-        <span>PayPay</span>
-        <strong id="paypayBalance">¥0</strong>
+      <div class="balance-card">
+        <span class="account-label">PayPay</span>
+        <span id="paypayBalance" class="balance-amount">¥0</span>
       </div>
-      <div class="balance-item">
-        <span>Suica</span>
-        <strong id="suicaBalance">¥0</strong>
-      </div>
-    </section>
-
-    <!-- 今月の収支 -->
-    <section class="summary-card">
-      <h2>今月の収支</h2>
-      <div class="summary-details">
-        <div>収入: <span id="monthlyIncome" class="income">¥0</span></div>
-        <div>支出: <span id="monthlyExpense" class="expense">¥0</span></div>
-        <div>収支: <span id="monthlyBalance">¥0</span></div>
+      <div class="balance-card">
+        <span class="account-label">Suica</span>
+        <span id="suicaBalance" class="balance-amount">¥0</span>
       </div>
     </section>
 
-    <!-- 取引追加ボタン -->
-    <button id="addButton" class="primary-button">＋ 取引を追加</button>
-
-    <!-- バックアップ・復元セクション -->
-    <section class="backup-section">
-      <h2>データ管理</h2>
-      <div class="backup-buttons">
-        <button id="exportButton" class="sub-button">📥 バックアップを保存</button>
-        <input type="file" id="importFile" accept=".json" style="display: none;">
-        <button id="importButton" class="sub-button">📤 データを復元</button>
+    <!-- 今月のサマリー -->
+    <section class="summary-section">
+      <div class="summary-item">
+        <span class="summary-label">今月の収入</span>
+        <span id="monthlyIncome" class="summary-value income">+¥0</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">今月の支出</span>
+        <span id="monthlyExpense" class="summary-value expense">-¥0</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">収支</span>
+        <span id="monthlyBalance" class="summary-value">¥0</span>
       </div>
     </section>
 
-    <!-- 取引履歴 -->
-    <section class="history-section">
-      <h2>取引履歴</h2>
+    <!-- 取引リストエリア -->
+    <section class="transaction-section">
+      <div class="section-header">
+        <h2>取引履歴</h2>
+        <button id="addButton" class="primary-button">+ 取引を追加</button>
+      </div>
       <div id="transactionList" class="transaction-list">
-        <!-- JavaScriptで動的に生成 -->
+        <!-- 動的に挿入されます -->
       </div>
+    </section>
+
+    <!-- データ管理ボタン -->
+    <section class="data-management">
+      <button id="exportButton" class="secondary-button">バックアップ（保存）</button>
+      <button id="importButton" class="secondary-button">データを復元</button>
+      <input type="file" id="importFile" accept=".json" style="display: none;">
     </section>
   </div>
 
-  <!-- モーダル（取引追加・編集） -->
+  <!-- 取引追加・編集モーダル -->
   <div id="modal" class="modal hidden">
     <div class="modal-content">
       <h2 id="modalTitle">取引を追加</h2>
 
-      <!-- 種類選択 -->
+      <!-- 種類選択ボタン -->
       <div class="form-group">
         <label>種類</label>
         <div class="button-group">
-          <button type="button" class="choice-button type-button" data-type="income">収入</button>
-          <button type="button" class="choice-button type-button" data-type="expense">支出</button>
-          <button type="button" class="choice-button type-button" data-type="transfer">口座移動</button>
+          <button type="button" class="type-button selected" data-type="expense">支出</button>
+          <button type="button" class="type-button" data-type="income">収入</button>
+          <button type="button" class="type-button" data-type="transfer">口座移動</button>
         </div>
       </div>
 
-      <!-- タイトル -->
+      <!-- タイトル（クイック選択付き） -->
       <div class="form-group">
-        <label>タイトル（省略可能）</label>
-        <input type="text" id="titleInput" placeholder="例: 昼食、カラオケなど">
-        <!-- よく使うタイトルの選択肢（JavaScriptで動的に生成） -->
-        <div id="quickTitlesContainer" class="quick-titles" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
-          <!-- JSでボタンが挿入されます -->
+        <label>タイトル</label>
+        <input type="text" id="titleInput" placeholder="例: 昼食、給料など">
+        <div id="quickTitlesContainer" class="quick-titles">
+          <!-- 動的生成 -->
         </div>
       </div>
 
@@ -105,20 +103,20 @@
         <input type="number" id="amountInput" placeholder="0">
       </div>
 
-      <!-- 個別非表示チェックボックス -->
+      <!-- ★ここに追加：個別非表示チェックボックス -->
       <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
         <input type="checkbox" id="hideAmountInput" style="width: 20px; height: 20px; accent-color: var(--text-main); cursor: pointer;">
         <label for="hideAmountInput" style="margin-bottom: 0; cursor: pointer; font-size: 14px;">この取引の金額を履歴で非表示にする</label>
       </div>
 
-      <!-- 通常の口座選択（収入・支出用） -->
+      <!-- 通常の口座選択 -->
       <div id="accountArea" class="form-group">
-        <label>口座 / 支払い方法</label>
+        <label>口座</label>
         <div class="button-group">
-          <button type="button" class="choice-button account-button" data-account="cash">現金</button>
-          <button type="button" class="choice-button account-button" data-account="olive">Olive</button>
-          <button type="button" class="choice-button account-button" data-account="paypay">PayPay</button>
-          <button type="button" class="choice-button account-button" data-account="suica">Suica</button>
+          <button type="button" class="account-button selected" data-account="cash">現金</button>
+          <button type="button" class="account-button" data-account="olive">Olive</button>
+          <button type="button" class="account-button" data-account="paypay">PayPay</button>
+          <button type="button" class="account-button" data-account="suica">Suica</button>
         </div>
       </div>
 
@@ -126,49 +124,47 @@
       <div id="transferArea" class="form-group hidden">
         <label>移動元</label>
         <div class="button-group">
-          <button type="button" class="choice-button from-button" data-account="cash">現金</button>
-          <button type="button" class="choice-button from-button" data-account="olive">Olive</button>
-          <button type="button" class="choice-button from-button" data-account="paypay">PayPay</button>
-          <button type="button" class="choice-button from-button" data-account="suica">Suica</button>
+          <button type="button" class="from-button selected" data-account="cash">現金</button>
+          <button type="button" class="from-button" data-account="olive">Olive</button>
+          <button type="button" class="from-button" data-account="paypay">PayPay</button>
+          <button type="button" class="from-button" data-account="suica">Suica</button>
         </div>
-        <label style="margin-top: 10px; display: block;">移動先</label>
+        <label style="margin-top: 10px;">移動先</label>
         <div class="button-group">
-          <button type="button" class="choice-button to-button" data-account="cash">現金</button>
-          <button type="button" class="choice-button to-button" data-account="olive">Olive</button>
-          <button type="button" class="choice-button to-button" data-account="paypay">PayPay</button>
-          <button type="button" class="choice-button to-button" data-account="suica">Suica</button>
+          <button type="button" class="to-button" data-account="cash">現金</button>
+          <button type="button" class="to-button selected" data-account="olive">Olive</button>
+          <button type="button" class="to-button" data-account="paypay">PayPay</button>
+          <button type="button" class="to-button" data-account="suica">Suica</button>
         </div>
       </div>
 
-      <!-- 保存・閉じるボタン -->
+      <!-- モーダル操作ボタン -->
       <div class="modal-buttons">
-        <button id="saveTransaction" class="primary-button">追加する</button>
-        <button id="closeModal" class="cancel-button">キャンセル</button>
+        <button type="button" id="closeModal" class="cancel-button">キャンセル</button>
+        <button type="button" id="saveTransaction" class="primary-button">追加する</button>
       </div>
     </div>
   </div>
 
-  <!-- 設定モーダル（クイックボタン編集用） -->
+  <!-- 設定モーダル -->
   <div id="settingsModal" class="modal hidden">
     <div class="modal-content">
-      <h2>クイックボタン編集</h2>
+      <h2>クイックタイトルの編集</h2>
       <div class="form-group">
-        <label>新しいボタンを追加</label>
+        <label>新しいタイトルを追加</label>
         <div style="display: flex; gap: 8px;">
-          <input type="text" id="newQuickTitleInput" placeholder="例: 文房具、交通費など">
-          <button type="button" id="addQuickTitleButton" class="primary-button" style="width: 100px; margin-bottom: 0; padding: 14px 8px;">追加</button>
+          <input type="text" id="newQuickTitleInput" placeholder="例: カフェ" style="flex: 1;">
+          <button type="button" id="addQuickTitleButton" class="primary-button" style="width: auto; padding: 0 16px;">追加</button>
         </div>
       </div>
-
       <div class="form-group">
-        <label>登録済みのボタン（タップして削除）</label>
-        <div id="settingsQuickList" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
-          <!-- JSで削除ボタン付きのリストが生成されます -->
+        <label>現在のタイトル一覧（×で削除）</label>
+        <div id="settingsQuickList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+          <!-- 動的生成 -->
         </div>
       </div>
-
       <div class="modal-buttons" style="margin-top: 20px;">
-        <button id="closeSettingsModal" class="primary-button">完了</button>
+        <button type="button" id="closeSettingsModal" class="primary-button" style="width: 100%;">閉じる</button>
       </div>
     </div>
   </div>
