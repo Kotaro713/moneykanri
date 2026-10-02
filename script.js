@@ -30,6 +30,7 @@ const toggleBalanceButton = document.getElementById('toggleBalance');
 
 const titleInput = document.getElementById('titleInput');
 const amountInput = document.getElementById('amountInput');
+const hideAmountInput = document.getElementById('hideAmountInput'); // 追加
 const accountArea = document.getElementById('accountArea');
 const transferArea = document.getElementById('transferArea');
 const quickTitlesContainer = document.getElementById('quickTitlesContainer');
@@ -50,25 +51,19 @@ closeModalButton.addEventListener('click', closeModal);
 saveTransactionButton.addEventListener('click', saveTransaction);
 toggleBalanceButton.addEventListener('click', toggleBalanceVisibility);
 
-// 設定モーダル関連
 openSettingsButton.addEventListener('click', openSettings);
 closeSettingsModalButton.addEventListener('click', closeSettings);
 addQuickTitleButton.addEventListener('click', addQuickTitle);
 
-// ★追加：背景（何もないところ）をタップしたらモーダルを閉じる
 modal.addEventListener('click', (e) => {
-  if (e.target === modal) {
-    closeModal();
-  }
+  if (e.target === modal) closeModal();
 });
 
 settingsModal.addEventListener('click', (e) => {
-  if (e.target === settingsModal) {
-    closeSettings();
-  }
+  if (e.target === settingsModal) closeSettings();
 });
 
-// 種類ボタン（収入・支出・口座移動）
+// 種類ボタン
 document.querySelectorAll('.type-button').forEach(button => {
   button.addEventListener('click', (e) => {
     document.querySelectorAll('.type-button').forEach(btn => btn.classList.remove('selected'));
@@ -85,7 +80,6 @@ document.querySelectorAll('.type-button').forEach(button => {
   });
 });
 
-// 口座ボタン（通常）
 document.querySelectorAll('.account-button').forEach(button => {
   button.addEventListener('click', (e) => {
     document.querySelectorAll('.account-button').forEach(btn => btn.classList.remove('selected'));
@@ -94,7 +88,6 @@ document.querySelectorAll('.account-button').forEach(button => {
   });
 });
 
-// 移動元ボタン
 document.querySelectorAll('.from-button').forEach(button => {
   button.addEventListener('click', (e) => {
     document.querySelectorAll('.from-button').forEach(btn => btn.classList.remove('selected'));
@@ -103,7 +96,6 @@ document.querySelectorAll('.from-button').forEach(button => {
   });
 });
 
-// 移動先ボタン
 document.querySelectorAll('.to-button').forEach(button => {
   button.addEventListener('click', (e) => {
     document.querySelectorAll('.to-button').forEach(btn => btn.classList.remove('selected'));
@@ -112,7 +104,6 @@ document.querySelectorAll('.to-button').forEach(button => {
   });
 });
 
-// バックアップ＆インポート
 document.getElementById('exportButton').addEventListener('click', exportData);
 document.getElementById('importButton').addEventListener('click', () => document.getElementById('importFile').click());
 document.getElementById('importFile').addEventListener('change', importData);
@@ -147,6 +138,7 @@ function openModal(transaction = null) {
     saveTransactionButton.textContent = '更新する';
     titleInput.value = transaction.title;
     amountInput.value = transaction.amount;
+    hideAmountInput.checked = transaction.hidden || false; // 編集時の反映
     
     currentType = transaction.type;
     updateSelectedButton('.type-button', 'type', currentType);
@@ -170,6 +162,7 @@ function openModal(transaction = null) {
     saveTransactionButton.textContent = '追加する';
     titleInput.value = '';
     amountInput.value = '';
+    hideAmountInput.checked = false; // 新規時はチェックなし
     
     currentType = 'expense';
     updateSelectedButton('.type-button', 'type', currentType);
@@ -266,7 +259,8 @@ function saveTransaction() {
     amount: amount,
     account: selectedAccount,
     from: fromAccount,
-    to: toAccount
+    to: toAccount,
+    hidden: hideAmountInput.checked // 個別非表示フラグを保存
   };
 
   if (editingId) {
@@ -312,6 +306,7 @@ function updateUI() {
   transactionListEl.innerHTML = '';
 
   transactions.forEach(t => {
+    // 残高・月次計算は常に正確な金額で行う
     if (t.type === 'income') {
       balances[t.account] += t.amount;
     } else if (t.type === 'expense') {
@@ -338,9 +333,14 @@ function updateUI() {
       subText = accountName[t.account];
     }
 
+    // 金額表示の処理（個別非表示 or 全体非表示の考慮）
     let amountFormatted = `¥${t.amount.toLocaleString()}`;
     if (t.type === 'expense') amountFormatted = `-¥${t.amount.toLocaleString()}`;
     if (t.type === 'income') amountFormatted = `+¥${t.amount.toLocaleString()}`;
+
+    if (hideBalance || t.hidden) {
+      amountFormatted = '••••';
+    }
 
     itemEl.innerHTML = `
       <div class="transaction-info">
@@ -363,9 +363,9 @@ function updateUI() {
   paypayBalanceEl.textContent = hideBalance ? '••••' : `¥${balances.paypay.toLocaleString()}`;
   suicaBalanceEl.textContent = hideBalance ? '••••' : `¥${balances.suica.toLocaleString()}`;
 
-  monthlyIncomeEl.textContent = `¥${monthlyIncome.toLocaleString()}`;
-  monthlyExpenseEl.textContent = `¥${monthlyExpense.toLocaleString()}`;
-  monthlyBalanceEl.textContent = `¥${(monthlyIncome - monthlyExpense).toLocaleString()}`;
+  monthlyIncomeEl.textContent = hideBalance ? '••••' : `¥${monthlyIncome.toLocaleString()}`;
+  monthlyExpenseEl.textContent = hideBalance ? '••••' : `¥${monthlyExpense.toLocaleString()}`;
+  monthlyBalanceEl.textContent = hideBalance ? '••••' : `¥${(monthlyIncome - monthlyExpense).toLocaleString()}`;
 }
 
 window.editTransaction = function(id) {
